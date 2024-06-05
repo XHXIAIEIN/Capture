@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
         rowGapInput: document.getElementById('rowGap'),
         paddingXInput: document.getElementById('paddingX'),
         paddingYInput: document.getElementById('paddingY'),
+        capturePaddingXInput: document.getElementById('capturePaddingX'),
+        capturePaddingYInput: document.getElementById('capturePaddingY'),
         bgColorInput: document.getElementById('bgColor'),
         photoWall: document.getElementById('photoWall'),
         fileThresholdInput: document.getElementById('fileThreshold'),
@@ -29,16 +31,19 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInput.addEventListener('change', event => handleFiles(event.target.files, UIElements));
     }
 
-    function setupUIChangeListeners({ maxWidthInput, columnsInput, rowsInput, columnGapInput, rowGapInput, paddingXInput, paddingYInput, bgColorInput }) {
-        [maxWidthInput, columnsInput, rowsInput, columnGapInput, rowGapInput, paddingXInput, paddingYInput, bgColorInput].forEach(input => {
-            if (input) {
-                input.addEventListener('change', () => updateLayout(UIElements));
+    function setupUIChangeListeners(elementsObj) {
+        Object.values(elementsObj).forEach(element => {
+            if (element && element instanceof HTMLElement) {
+                if (['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) {
+                    element.addEventListener('change', () => updateLayout(elementsObj));
+                }
             }
         });
+
     }
 
     function updateLayout(UIElements) {
-        const { photoWall, columnsInput, rowsInput, rowGapInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput } = UIElements;
+        const { photoWall, columnsInput, rowsInput, rowGapInput, capturePaddingXInput, capturePaddingYInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput } = UIElements;
         photoWall.style.padding = `${paddingYInput.value}px ${paddingXInput.value}px`;
         photoWall.style.gridTemplateColumns = `repeat(${columnsInput.value}, 1fr)`;
         photoWall.style.gridRowGap = `${rowGapInput.value}px`;
@@ -46,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
         photoWall.style.maxWidth = `${maxWidthInput.value}px`;
         photoWall.style.backgroundColor = bgColorInput.value;
         
+        document.querySelectorAll('.photo').forEach(photo => {
+            photo.style.padding = `${capturePaddingYInput.value}px ${capturePaddingXInput.value}px`;
+        });
+
         const photoCount = photoWall.children.length;
         const photosPerCapture = parseInt(rowsInput.value) * parseInt(columnsInput.value);
         const totalScreenshots = Math.ceil(photoCount/photosPerCapture);
@@ -172,40 +181,49 @@ document.addEventListener('DOMContentLoaded', () => {
     
         if (photos.length <= fileThreshold) {
             for (let i = 0; i < photos.length; i += imagesPerCapture) {
-                await captureAndSaveImage(photos, i, imagesPerCapture, `${(i / imagesPerCapture + 1).toString().padStart(3, '0')}.png`, UIElements);
+                const fileName = `${(i / imagesPerCapture + 1).toString().padStart(3, '0')}.png`
+                await captureAndSaveImage(photos, i, imagesPerCapture, fileName, UIElements);
                 let capturePercentage = ((i + imagesPerCapture) / photos.length) * 100;
                 progressBar.style.width = `${capturePercentage}%`;
                 progressText.innerText = `正在截图... ${Math.round(capturePercentage)}%`;
             }
             progressText.innerText = "截图完成";
+
         } else {
             const zip = new JSZip();
             for (let i = 0; i < photos.length; i += imagesPerCapture) {
+                const fileName = `${(i / imagesPerCapture + 1).toString().padStart(3, '0')}.png`
                 const imgData = await captureAndSaveImage(photos, i, imagesPerCapture, null, UIElements);
-                zip.file(`${(i / imagesPerCapture + 1).toString().padStart(3, '0')}.png`, imgData, {base64: true});
+                zip.file(fileName, imgData, {base64: true});
                 let zipPercentage = Math.min((i + imagesPerCapture) / photos.length, 1) * 100;
                 progressBar.style.width = `${zipPercentage}%`;
                 progressText.innerText = `正在打包... ${Math.round(zipPercentage)}%`;
             }
-            progressText.innerText = "正在后台进行下载...\n此过程需要更多的时间，请耐心等待。";
+            progressText.innerText = "正在后台下载...\n此过程需要更多的时间，请耐心等待。";
+
             await zip.generateAsync({type: "blob"})
                 .then(content => {
                     saveAs(content, `Screenshots_${formattedDate}.zip`);
                     progressText.innerText = "完成";
                     captureButton.style.display = 'block';
+                    setTimeout(() => { progressText.innerText = `请查收 Screenshots_${formattedDate}.zip`; }, 1200);
                 });
         }
-        setTimeout(() => { progressText.innerText = `请查收 Screenshots_${formattedDate}.zip`; }, 1000);
-        setTimeout(() => { progressContainer.style.display = 'none'; }, 10000);
+   
+        setTimeout(() => { progressContainer.style.display = 'none'; }, 20000);
     }
     
     async function captureAndSaveImage(photos, startIndex, count, filename, UIElements) {
-        const { columnsInput, rowGapInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput } = UIElements;
+        const { columnsInput, rowGapInput, capturePaddingXInput, capturePaddingYInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput } = UIElements;
         const currentPhotos = photos.slice(startIndex, startIndex + count);
         const fragment = document.createDocumentFragment();
+
         currentPhotos.forEach(photo => {
             const clone = photo.cloneNode(true);
-            clone.style.padding = `${paddingYInput.value}px ${paddingXInput.value}px`;
+            clone.style.padding = `${capturePaddingYInput.value}px ${capturePaddingXInput.value}px`;
+            clone.style.boxSizing = 'border-box';
+            clone.style.justifyItems = 'center';
+            clone.style.alignItems = 'center';
             fragment.appendChild(clone);
         });
     
@@ -213,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tempDiv.className = 'tempDiv';
         tempDiv.style.backgroundColor = bgColorInput.value;
         tempDiv.style.display = 'grid';
+        tempDiv.style.boxSizing = 'border-box';
         tempDiv.style.gridTemplateColumns = `repeat(${columnsInput.value}, 1fr)`;
         tempDiv.style.gap = `${rowGapInput.value}px ${columnGapInput.value}px`;
         tempDiv.style.padding = `${paddingYInput.value}px ${paddingXInput.value}px`;
