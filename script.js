@@ -47,8 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
         photoWall.style.backgroundColor = bgColorInput.value;
     
         const photosPerCapture = parseInt(rowsInput.value) * parseInt(columnsInput.value);
-        const totalScreenshots = Math.ceil(fileArray.length / photosPerCapture);
-        progressText.innerText = `文件夹包含${fileArray.length}个图片，预计生成${totalScreenshots}张截图`; 
+        const totalScreenshots = Math.ceil(photoWall.children.length / photosPerCapture);
+        progressText.innerText = `文件夹包含${photoWall.children.length}个图片，预计生成${totalScreenshots}张截图`; 
 
     }
 
