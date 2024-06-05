@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 progressBar.style.width = `${zipPercentage}%`;
                 progressText.innerText = `正在打包... ${Math.round(zipPercentage)}%`;
             }
-            progressText.innerText = "正在下载...此过程需要更多的时间，请耐心等待。";
+            progressText.innerText = "正在后台进行下载...\n此过程需要更多的时间，请耐心等待。";
             await zip.generateAsync({type: "blob"})
                 .then(content => {
                     saveAs(content, `Screenshots_${formattedDate}.zip`);
