@@ -45,10 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
         photoWall.style.gridColumnGap = `${columnGapInput.value}px`;
         photoWall.style.maxWidth = `${maxWidthInput.value}px`;
         photoWall.style.backgroundColor = bgColorInput.value;
-    
+        
+        const photoCount = photoWall.children.length;
         const photosPerCapture = parseInt(rowsInput.value) * parseInt(columnsInput.value);
-        const totalScreenshots = Math.ceil(photoWall.children.length / photosPerCapture);
-        progressText.innerText = `文件夹包含${photoWall.children.length}个图片，预计生成${totalScreenshots}张截图`; 
+        const totalScreenshots = Math.ceil(photoCount/photosPerCapture);
+        progressText.innerText = `文件夹包含${photoCount}个图片，预计生成${totalScreenshots}张截图`; 
 
     }
 
