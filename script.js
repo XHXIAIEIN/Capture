@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         }
         setTimeout(() => { progressText.innerText = `请查收 Screenshots_${formattedDate}.zip`; }, 1000);
-        setTimeout(() => { progressContainer.style.display = 'none'; }, 5000);
+        setTimeout(() => { progressContainer.style.display = 'none'; }, 10000);
     }
     
     async function captureAndSaveImage(photos, startIndex, count, filename, UIElements) {
