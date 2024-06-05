@@ -102,9 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return files.sort((a, b) => {
             switch (order) {
                 case 'nameAsc':
-                    return a.localeCompare(b);
+                    return a.name.localeCompare(b.name);
                 case 'nameDesc':
-                    return b.localeCompare(a);
+                    return b.name.localeCompare(a.name);
                 case 'dateAsc':
                     return a.lastModified - b.lastModified;
                 case 'dateDesc':
