@@ -54,7 +54,7 @@
                     <input type="number" id="paddingY" value="4" min="0">
                 </label>
                 <label>
-                    超过指定图片数量生成压缩包:
+                    超过图片数量打包下载:
                     <input type="number" id="fileThreshold" value="5" min="1">
                 </label>
                 <label>
@@ -78,27 +78,27 @@
         </details>
     </div>
 
-    <button id="captureButton">生成截图</button>
-
-    <details id="about" class="centered">
-        <summary>更多信息</summary>
-        <div class="content">
-           <h3>这个网站是做什么的？</h3>
-           <p>你可以点击页面虚线框的按钮，指定一个本地文件夹，网站会帮助你将文件夹中的图片以网格布局进行排列，这里还提供了一些简单的参数选项，可以调整页面显示图片的列数、每张图片的间距等。然后点击截图按钮，将他们一键进行截图。</p>
-
-           <h3>我的数据是保密的吗？</h3>
-           <p>是的，你操作的文件不会离开你的电脑。这些文件不会被其他任何人访问到，此页面提供的链接也只能在您本地生效，它只为你工作，加载过程中也没有任何东西通过网络进行传输。 </p>
-
-           <h3>这网站是谁做的？</h3>
-           <p>你好，我是 <a href="https://github.com/XHXIAIEIN">XHXIAIEIN</a>， 是一名独立游戏开发者，正在使用  <a href="https://www.construct.net/a/260259?t=construct3">Construct 3</a> 引擎开发游戏。</p>
-        </div>
-
-    </details>
-
     <div id="progressContainer">
         <p id="progressText"></p>
         <div id="progressBar"></div>
     </div>
+
+    <button id="captureButton">生成截图</button>
+
+    <details id="about" class="centered"> 
+        <summary>更多信息</summary>
+        <div class="content">
+           <h3>这个网站是做什么的？</h3>
+           <p>点击页面虚线框的按钮，指定一个本地文件夹，网站会帮助你将文件夹中的图片以网格布局进行排列显示，还可以点击截图按钮，一键进行截图。这里还提供了一些简单的参数选项，可以调整页面显示图片的列数、每张图片的间距等。</p>
+
+           <h3>我的数据是保密的吗？</h3>
+           <p>是的，你操作的文件不会离开你的电脑。这些文件不会被其他任何人访问到，此页面提供的服务也只能在您本地生效，它只为你工作，加载过程中也没有任何东西通过网络进行传输。 </p>
+
+           <h3>这网站是谁做的？</h3>
+           <p>你好，我是 <a href="https://github.com/XHXIAIEIN">XHXIAIEIN</a>，是一名独立游戏开发者，正在使用 <a href="https://www.construct.net/a/260259?t=construct3">Construct 3</a> 引擎开发游戏。</p>
+        </div>
+
+    </details>
 
     <div id="photoWallContainer">
         <div id="photoWall"></div>

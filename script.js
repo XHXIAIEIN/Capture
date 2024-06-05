@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+
     const UIElements = {
         dropArea: document.getElementById('dropArea'),
         fileInput: document.getElementById('fileInput'),
@@ -72,8 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         progressText.innerText = "导入完成";
+        const photosPerCapture = parseInt(UIElements.rowsInput.value) * parseInt(UIElements.columnsInput.value);
+        const totalScreenshots = Math.ceil(fileArray.length / photosPerCapture);
 
-        setTimeout(() => { progressContainer.style.display = 'none'; }, 500);
+        setTimeout(() => { 
+            progressText.innerText = `文件夹包含图片${fileArray.length}件，预计生成截图 ${totalScreenshots} 张`; 
+        }, 600);
 
         if (photoWall.children.length > 0) {
             photoWallContainer.style.display = 'flex';
@@ -156,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const imagesPerCapture = rows * columns;
         const fileThreshold = parseInt(fileThresholdInput.value);
     
+        captureButton.style.display = 'none';
         progressContainer.style.display = 'block';
         progressText.innerText = "正在截图...";
     
@@ -179,13 +185,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 progressBar.style.width = `${zipPercentage}%`;
                 progressText.innerText = `正在打包... ${Math.round(zipPercentage)}%`;
             }
+            progressText.innerText = "正在下载...此过程需要更多的时间，请耐心等待。";
             await zip.generateAsync({type: "blob"})
                 .then(content => {
                     saveAs(content, `Screenshots_${formattedDate}.zip`);
                     progressText.innerText = "完成";
+                    captureButton.style.display = 'block';
                 });
         }
-        setTimeout(() => { progressContainer.style.display = 'none'; }, 2000);
+        setTimeout(() => { progressText.innerText = `请查收 Screenshots_${formattedDate}.zip`; }, 1000);
+        setTimeout(() => { progressContainer.style.display = 'none'; }, 5000);
     }
     
     async function captureAndSaveImage(photos, startIndex, count, filename, UIElements) {

@@ -43,16 +43,11 @@ h3 + p {
 }
 
 #progressContainer {
-    height: 14px; 
-    width: 90%; 
-    padding-bottom: 10px;
-    background: #eee; 
+    padding-bottom: 30px;
     display: none;
 }
 
 #progressBar{
-    width: 0%; 
-    height: 100%; 
     background: #007bff;
 }
 
@@ -65,8 +60,9 @@ h3 + p {
 
 #photoWall {
     display: grid;
-    width: 90%;
+    box-sizing: border-box;
     max-width: 1200px;
+    width: 90%;
     gap: 4px;
     background-color: #ffffff;
 }
@@ -129,15 +125,14 @@ summary {
 }
 
 #about {
-    padding: 10px;
+    padding: 20px 0;
 }
 
 .content {
     margin-top: 10px;
-    padding: 10px;
+    padding: 10px 8%;
     background-color: #f1f1f1;
-    border-radius: 5px;
-    text-align: center;
+    text-align: left;
 }
 
 .centered {
