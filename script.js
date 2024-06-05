@@ -62,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-    async function handleFiles(files, { photoWall, sortOrder, progressContainer, progressBar, progressText, captureButton }) {
+    async function handleFiles(files, UIElements) {
+        const { photoWall, sortOrder, progressContainer, progressBar, progressText, captureButton } = UIElements
         photoWall.innerHTML = '';
         photoWallContainer.style.display = 'none';
 
@@ -101,9 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return files.sort((a, b) => {
             switch (order) {
                 case 'nameAsc':
-                    return fileNameCompare(a.name, b.name);
+                    return a.localeCompare(b);
                 case 'nameDesc':
-                    return fileNameCompare(b.name, a.name);
+                    return b.localeCompare(a);
                 case 'dateAsc':
                     return a.lastModified - b.lastModified;
                 case 'dateDesc':
@@ -120,30 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return 0;
             }
         });
-    }
-
-    function fileNameCompare(a, b) {
-        if (a == null || b == null) return 0;
-        let na = a.split(/[-_.—, (]/);
-        let nb = b.split(/[-_.—, (]/);
-        let maxLoop = Math.max(na.length, nb.length);
-        for (let i = 0; i < maxLoop; i++) {
-            if (!isNaN(Number(na[i])) && !isNaN(Number(nb[i]))) {
-                let num = Number(na[i]) - Number(nb[i]);
-                if (num !== 0) {
-                    return num;
-                }
-            }
-        }
-        let ma = a.match(/[0-9]+/);
-        let mb = b.match(/[0-9]+/);
-        if (ma && mb && ma.length && mb.length) {
-            let num = Number(ma[0]) - Number(mb[0]);
-            if (num !== 0) {
-                return num;
-            }
-        }
-        return a.localeCompare(b);
     }
 
     function loadImage(file, photoWall) {
@@ -221,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPhotos.forEach(photo => {
             const clone = photo.cloneNode(true);
             clone.style.padding = `${capturePaddingYInput.value}px ${capturePaddingXInput.value}px`;
-            clone.style.boxSizing = 'border-box';
             clone.style.justifyItems = 'center';
             clone.style.alignItems = 'center';
             fragment.appendChild(clone);
