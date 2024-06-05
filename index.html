@@ -3,74 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Wall</title>
+    <title>Capture</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <h1>Photo Wall</h1>
-    <div id="dropArea">Click or Drag & Drop Folder Here</div>
+    <h1>相册截图工具</h1>
+    <div id="dropArea">点击此处，导入文件夹</div>
     <input type="file" id="fileInput" webkitdirectory multiple>
 
     <div id="configPanel">
         <div class="configGroup">
             <label>
-                Columns:
+                每列显示:
                 <input type="number" id="columns" value="4" min="1">
             </label>
             <label>
-                Rows per Screenshot:
+                单张截图包含行数:
                 <input type="number" id="rows" value="8" min="1">
             </label>
             <label>
-                Max Width:
+                截图最大宽度:
                 <input type="number" id="maxWidth" value="1200" min="100">
             </label>
             <label>
-                Background Color:
+                截图背景色:
                 <input type="color" id="bgColor" value="#ffffff">
             </label>
         </div>
 
         <details>
-            <summary>Advanced Settings</summary>
+            <summary>高级设置</summary>
             <div class="configGroup">
                 <label>
-                    Gap Column:
+                    图片间距:
                     <input type="number" id="columnGap" value="4" min="1">
                 </label>
                 <label>
-                    Gap Row:
+                    图片行距:
                     <input type="number" id="rowGap" value="4" min="1">
                 </label>
                 <label>
-                    Padding Horizontal:
+                    页面边距:
                     <input type="number" id="paddingX" value="4" min="0">
                 </label>
                 <label>
-                    Padding vertical:
+                    头尾边距:
                     <input type="number" id="paddingY" value="4" min="0">
                 </label>
                 <label>
-                    File threshold for ZIP:
+                    超过指定图片数量生成压缩包:
                     <input type="number" id="fileThreshold" value="5" min="1">
                 </label>
                 <label>
                     Sort by:
                     <select id="sortOrder">
                         <optgroup label="Basic">
-                            <option value="nameAsc">Name (A-Z)</option>
-                            <option value="nameDesc">Name (Z-A)</option>
-                            <option value="dateAsc">Date (Oldest First)</option>
-                            <option value="dateDesc">Date (Newest First)</option>
+                            <option value="nameAsc">名称 (A-Z)</option>
+                            <option value="nameDesc">名称 (Z-A)</option>
+                            <option value="dateAsc">最后修改时间 (最早优先)</option>
+                            <option value="dateDesc">最后修改时间 (最近优先)</option>
                         </optgroup>
                         <optgroup label="Advanced">
-                            <option value="sizeAsc">Size (Smallest First)</option>
-                            <option value="sizeDesc">Size (Largest First)</option>
-                            <option value="typeAsc">Type (A-Z)</option>
-                            <option value="typeDesc">Type (Z-A)</option>
+                            <option value="sizeAsc">大小 (更小优先)</option>
+                            <option value="sizeDesc">大小 (更大优先)</option>
+                            <option value="typeAsc">类型 (A-Z)</option>
+                            <option value="typeDesc">类型 (Z-A)</option>
                         </optgroup>
                     </select>
                 </label>
@@ -78,17 +78,25 @@
         </details>
     </div>
 
-    <button id="captureButton">Capture and Save</button>
+    <button id="captureButton">生成截图</button>
 
     <details id="about" class="centered">
-        <summary>About This Application</summary>
+        <summary>更多信息</summary>
         <div class="content">
-            <p>This is a photo wall application. You can drag and drop a folder to display images. Click the button to capture and save screenshots. This application allows for easy visualization and saving of your photo collections.</p>
+           <h3>这个网站是做什么的？</h3>
+           <p>你可以点击页面虚线框的按钮，指定一个本地文件夹，网站会帮助你将文件夹中的图片以网格布局进行排列，这里还提供了一些简单的参数选项，可以调整页面显示图片的列数、每张图片的间距等。然后点击截图按钮，将他们一键进行截图。</p>
+
+           <h3>我的数据是保密的吗？</h3>
+           <p>是的，你操作的文件不会离开你的电脑。这些文件不会被其他任何人访问到，此页面提供的链接也只能在您本地生效，它只为你工作，加载过程中也没有任何东西通过网络进行传输。 </p>
+
+           <h3>这网站是谁做的？</h3>
+           <p>你好，我是 <a href="https://github.com/XHXIAIEIN">XHXIAIEIN</a>， 是一名独立游戏开发者，正在使用  <a href="https://www.construct.net/a/260259?t=construct3">Construct 3</a> 引擎开发游戏。</p>
         </div>
+
     </details>
 
     <div id="progressContainer">
-        <p id="progressText">Loading...</p>
+        <p id="progressText"></p>
         <div id="progressBar"></div>
     </div>
 
