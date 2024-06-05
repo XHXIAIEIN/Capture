@@ -1,4 +1,4 @@
-# GalleryViewer
+# GalleryCapture
 
 ## 在线体验
 
