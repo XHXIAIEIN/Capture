@@ -37,13 +37,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function updateLayout({ photoWall, columnsInput, rowGapInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput }) {
+    function updateLayout(UIElements) {
+        const { photoWall, columnsInput, rowsInput, rowGapInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput } = UIElements;
         photoWall.style.padding = `${paddingYInput.value}px ${paddingXInput.value}px`;
         photoWall.style.gridTemplateColumns = `repeat(${columnsInput.value}, 1fr)`;
         photoWall.style.gridRowGap = `${rowGapInput.value}px`;
         photoWall.style.gridColumnGap = `${columnGapInput.value}px`;
         photoWall.style.maxWidth = `${maxWidthInput.value}px`;
         photoWall.style.backgroundColor = bgColorInput.value;
+    
+        const photosPerCapture = parseInt(rowsInput.value) * parseInt(columnsInput.value);
+        const totalScreenshots = Math.ceil(fileArray.length / photosPerCapture);
+        progressText.innerText = `文件夹包含${fileArray.length}个图片，预计生成${totalScreenshots}张截图`; 
+
     }
 
     async function handleFiles(files, { photoWall, sortOrder, progressContainer, progressBar, progressText, captureButton }) {
@@ -58,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileArray = sortFiles(fileArray, sortOrder.value);
         
         progressBar.style.width = `1%`;
-        progressText.innerText = `正在加载图片...`;
+        progressText.innerText = `正在导入图片...`;
         
         updateLayout(UIElements);
         
@@ -68,17 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadImage(file, photoWall);
                 let loadedPercentage = ((index + 1) / fileArray.length) * 100;
                 progressBar.style.width = `${loadedPercentage}%`;
-                progressText.innerText = `正在加载图片... ${Math.round(loadedPercentage)}%`;
+                progressText.innerText = `正在导入图片... ${Math.round(loadedPercentage)}%`;
             }
         }
 
         progressText.innerText = "导入完成";
-        const photosPerCapture = parseInt(UIElements.rowsInput.value) * parseInt(UIElements.columnsInput.value);
-        const totalScreenshots = Math.ceil(fileArray.length / photosPerCapture);
-
-        setTimeout(() => { 
-            progressText.innerText = `文件夹包含图片${fileArray.length}件，预计生成截图 ${totalScreenshots} 张`; 
-        }, 600);
+        updateLayout(UIElements);
 
         if (photoWall.children.length > 0) {
             photoWallContainer.style.display = 'flex';
