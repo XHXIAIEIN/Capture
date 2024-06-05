@@ -25,52 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupDragAndDropListeners({ dropArea, fileInput }) {
         dropArea.addEventListener('click', () => fileInput.click());
-        dropArea.addEventListener('dragover', event => {
-            event.preventDefault();
-            dropArea.classList.add('hover');
-        });
-        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('hover'));
-        dropArea.addEventListener('drop', event => processDroppedItems(event, UIElements));
         fileInput.addEventListener('change', event => handleFiles(event.target.files, UIElements));
-    }
-
-    function processDroppedItems(event, UIElements) {
-        event.preventDefault();
-        UIElements.dropArea.classList.remove('hover');
-        const items = event.dataTransfer.items;
-        if (items) {
-            const files = [];
-            const promises = [];
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].kind === 'file') {
-                    const entry = items[i].webkitGetAsEntry();
-                    if (entry.isDirectory) {
-                        promises.push(readDirectory(entry, files));
-                    } else {
-                        files.push(items[i].getAsFile());
-                    }
-                }
-            }
-            Promise.all(promises).then(() => handleFiles(files, UIElements));
-        } else {
-            handleFiles(event.dataTransfer.files, UIElements);
-        }
-    }
-
-    function readDirectory(directoryEntry, files) {
-        const reader = directoryEntry.createReader();
-        return new Promise((resolve) => {
-            reader.readEntries(async (entries) => {
-                for (let entry of entries) {
-                    if (entry.isFile) {
-                        entry.file(file => files.push(file));
-                    } else if (entry.isDirectory) {
-                        await readDirectory(entry, files);
-                    }
-                }
-                resolve();
-            });
-        });
     }
 
     function setupUIChangeListeners({ maxWidthInput, columnsInput, rowsInput, columnGapInput, rowGapInput, paddingXInput, paddingYInput, bgColorInput }) {
@@ -97,12 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let fileArray = Array.from(files);
         
         progressContainer.style.display = 'block';
-        progressText.innerText = "Sorting files...";
+        progressText.innerText = "正在对文件排序...";
         
         fileArray = sortFiles(fileArray, sortOrder.value);
         
         progressBar.style.width = `1%`;
-        progressText.innerText = `Loading images...`;
+        progressText.innerText = `正在加载图片...`;
         
         updateLayout(UIElements);
         
@@ -112,11 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadImage(file, photoWall);
                 let loadedPercentage = ((index + 1) / fileArray.length) * 100;
                 progressBar.style.width = `${loadedPercentage}%`;
-                progressText.innerText = `Loading images... ${Math.round(loadedPercentage)}%`;
+                progressText.innerText = `正在加载图片... ${Math.round(loadedPercentage)}%`;
             }
         }
 
-        progressText.innerText = "Load Complete";
+        progressText.innerText = "导入完成";
 
         setTimeout(() => { progressContainer.style.display = 'none'; }, 500);
 
@@ -202,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fileThreshold = parseInt(fileThresholdInput.value);
     
         progressContainer.style.display = 'block';
-        progressText.innerText = "Capturing...";
+        progressText.innerText = "正在截图...";
     
         const now = new Date();
         const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
@@ -212,9 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 await captureAndSaveImage(photos, i, imagesPerCapture, `${(i / imagesPerCapture + 1).toString().padStart(3, '0')}.png`, UIElements);
                 let capturePercentage = ((i + imagesPerCapture) / photos.length) * 100;
                 progressBar.style.width = `${capturePercentage}%`;
-                progressText.innerText = `Capturing... ${Math.round(capturePercentage)}%`;
+                progressText.innerText = `正在截图... ${Math.round(capturePercentage)}%`;
             }
-            progressText.innerText = "Capture Complete";
+            progressText.innerText = "截图完成";
         } else {
             const zip = new JSZip();
             for (let i = 0; i < photos.length; i += imagesPerCapture) {
@@ -222,12 +177,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 zip.file(`${(i / imagesPerCapture + 1).toString().padStart(3, '0')}.png`, imgData, {base64: true});
                 let zipPercentage = Math.min((i + imagesPerCapture) / photos.length, 1) * 100;
                 progressBar.style.width = `${zipPercentage}%`;
-                progressText.innerText = `Zipping... ${Math.round(zipPercentage)}%`;
+                progressText.innerText = `正在打包... ${Math.round(zipPercentage)}%`;
             }
             await zip.generateAsync({type: "blob"})
                 .then(content => {
                     saveAs(content, `Screenshots_${formattedDate}.zip`);
-                    progressText.innerText = "ZIP Created and Downloaded";
+                    progressText.innerText = "完成";
                 });
         }
         setTimeout(() => { progressContainer.style.display = 'none'; }, 2000);
