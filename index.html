@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Wall</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <h1>Photo Wall</h1>
+    <div id="dropArea">Click or Drag & Drop Folder Here</div>
+    <input type="file" id="fileInput" webkitdirectory multiple>
+
+    <div id="configPanel">
+        <div class="configGroup">
+            <label>
+                Columns:
+                <input type="number" id="columns" value="4" min="1">
+            </label>
+            <label>
+                Rows per Screenshot:
+                <input type="number" id="rows" value="8" min="1">
+            </label>
+            <label>
+                Max Width:
+                <input type="number" id="maxWidth" value="1200" min="100">
+            </label>
+            <label>
+                Background Color:
+                <input type="color" id="bgColor" value="#ffffff">
+            </label>
+        </div>
+
+        <details>
+            <summary>Advanced Settings</summary>
+            <div class="configGroup">
+                <label>
+                    Gap Column:
+                    <input type="number" id="columnGap" value="4" min="1">
+                </label>
+                <label>
+                    Gap Row:
+                    <input type="number" id="rowGap" value="4" min="1">
+                </label>
+                <label>
+                    Padding Horizontal:
+                    <input type="number" id="paddingX" value="4" min="0">
+                </label>
+                <label>
+                    Padding vertical:
+                    <input type="number" id="paddingY" value="4" min="0">
+                </label>
+                <label>
+                    File threshold for ZIP:
+                    <input type="number" id="fileThreshold" value="5" min="1">
+                </label>
+                <label>
+                    Sort by:
+                    <select id="sortOrder">
+                        <optgroup label="Basic">
+                            <option value="nameAsc">Name (A-Z)</option>
+                            <option value="nameDesc">Name (Z-A)</option>
+                            <option value="dateAsc">Date (Oldest First)</option>
+                            <option value="dateDesc">Date (Newest First)</option>
+                        </optgroup>
+                        <optgroup label="Advanced">
+                            <option value="sizeAsc">Size (Smallest First)</option>
+                            <option value="sizeDesc">Size (Largest First)</option>
+                            <option value="typeAsc">Type (A-Z)</option>
+                            <option value="typeDesc">Type (Z-A)</option>
+                        </optgroup>
+                    </select>
+                </label>
+            </div>
+        </details>
+    </div>
+
+    <button id="captureButton">Capture and Save</button>
+
+    <details id="about" class="centered">
+        <summary>About This Application</summary>
+        <div class="content">
+            <p>This is a photo wall application. You can drag and drop a folder to display images. Click the button to capture and save screenshots. This application allows for easy visualization and saving of your photo collections.</p>
+        </div>
+    </details>
+
+    <div id="progressContainer">
+        <p id="progressText">Loading...</p>
+        <div id="progressBar"></div>
+    </div>
+
+    <div id="photoWallContainer">
+        <div id="photoWall"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
