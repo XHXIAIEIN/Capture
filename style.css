@@ -1,0 +1,132 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    padding-bottom: 20px;
+}
+
+#dropArea {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 600px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 20px;
+    padding: 20px;
+    color: #ccc;
+    cursor: pointer;
+}
+
+#dropArea.hover {
+    border-color: #333;
+    color: #333;
+}
+
+#fileInput {
+    display: none;
+}
+
+#progressContainer {
+    height: 14px; 
+    width: 90%; 
+    padding-bottom: 10px;
+    background: #eee; 
+    display: none;
+}
+
+#progressBar{
+    width: 0%; 
+    height: 100%; 
+    background: #007bff;
+}
+
+#photoWallContainer {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 0 4px;
+}
+
+#photoWall {
+    display: grid;
+    width: 90%;
+    max-width: 1200px;
+    gap: 4px;
+    background-color: #ffffff;
+}
+
+.photo {
+    width: 100%;
+    height: auto;
+}
+
+#captureButton {
+    margin: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: none;
+}
+
+#captureButton:hover {
+    background-color: #0056b3;
+}
+
+#configPanel {
+    width: 80%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 20px;
+}
+
+.configGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.configGroup label {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 calc(50% - 10px);
+}
+
+details {
+    width: 100%;
+    padding-bottom: 10px;
+}
+
+summary {
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#about {
+    padding: 20px;
+}
+
+.content {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.centered {
+    text-align: center;
+}
