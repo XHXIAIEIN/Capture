@@ -39,7 +39,7 @@
             <div class="configGroup">
                 <label>
                     图片间距:
-                    <input type="number" id="columnGap" value="4" min="0">
+                    <input type="number" id="columnGap" value="0" min="0">
                 </label>
                 <label>
                     图片行距:
@@ -47,7 +47,7 @@
                 </label>
                 <label>
                     页面水平边距:
-                    <input type="number" id="paddingX" value="4" min="0">
+                    <input type="number" id="paddingX" value="0" min="0">
                 </label>
                 <label>
                     页面垂直边距:
@@ -55,7 +55,7 @@
                 </label>
                 <label>
                     图片水平边距:
-                    <input type="number" id="capturePaddingX" value="0" min="0">
+                    <input type="number" id="capturePaddingX" value="2" min="0">
                 </label>
                 <label>
                     图片垂直边距:
@@ -90,6 +90,8 @@
         <p id="progressText"></p>
         <div id="progressBar"></div>
     </div>
+
+    <div id="linksContainer"></div>
 
     <button id="captureButton">生成截图</button>
 
