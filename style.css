@@ -54,7 +54,7 @@ a:hover {
 }
 
 #configPanel, #progressContainer {
-    width: 100%;
+    width: 90%;
     max-width: 600px;
     display: flex;
     flex-direction: column;
@@ -149,7 +149,7 @@ summary {
 
 #about {
     padding: 20px;
-    width: 100%;
+    width: 90%;
     max-width: 600px;
     border-radius: 8px;
     background-color: #ffffff;
