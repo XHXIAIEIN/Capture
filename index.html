@@ -3,123 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Capture</title>
+    <title>相册截图工具</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <h1>相册截图工具</h1>
-    <div id="dropArea">点击此处，导入文件夹</div>
-    <input type="file" id="fileInput" accept="image/*" webkitdirectory multiple>
+    <div class="container">
+        <h1>相册截图工具</h1>
+        <div id="dropArea">点击此处，导入文件夹</div>
+        <input type="file" id="fileInput" accept="image/*" webkitdirectory multiple style="display:none;">
 
-    <div id="configPanel">
-        <div class="configGroup">
-            <label>
-                每列显示:
-                <input type="number" id="columns" value="4" min="1">
-            </label>
-            <label>
-                单张截图包含行数:
-                <input type="number" id="rows" value="8" min="1">
-            </label>
-            <label>
-                截图最大宽度:
-                <input type="number" id="maxWidth" value="1200" min="100">
-            </label>
-            <label>
-                截图背景色:
-                <input type="color" id="bgColor" value="#000000">
-            </label>
-        </div>
+        <details id="about" class="centered"> 
+            <summary>更多信息</summary>
+            <div class="content">
+               <h3>这个网站是做什么的？</h3>
+               <p>点击页面虚线框的按钮，指定一个本地文件夹，网站会帮助你将文件夹中的图片以网格布局进行排列显示，还可以点击截图按钮，一键进行截图。这里还提供了一些简单的参数选项，可以调整页面显示图片的列数、每张图片的间距等。</p>
 
-        <details>
-            <summary>高级设置</summary>
-            <div class="configGroup">
-                <label>
-                    图片间距:
-                    <input type="number" id="columnGap" value="0" min="0">
-                </label>
-                <label>
-                    图片行距:
-                    <input type="number" id="rowGap" value="0" min="0">
-                </label>
-                <label>
-                    页面水平边距:
-                    <input type="number" id="paddingX" value="0" min="0">
-                </label>
-                <label>
-                    页面垂直边距:
-                    <input type="number" id="paddingY" value="0" min="0">
-                </label>
-                <label>
-                    图片水平边距:
-                    <input type="number" id="capturePaddingX" value="2" min="0">
-                </label>
-                <label>
-                    图片垂直边距:
-                    <input type="number" id="capturePaddingY" value="2" min="0">
-                </label>
-                <label>
-                    超过数量打包下载:
-                    <input type="number" id="fileThreshold" value="5" min="1">
-                </label>
-                <label>
-                    排序:
-                    <select id="sortOrder">
-                        <optgroup label="基础">
-                            <option value="nameAsc">名称 (A-Z)</option>
-                            <option value="nameDesc">名称 (Z-A)</option>
-                            <option value="dateAsc">最后修改时间 (最早优先)</option>
-                            <option value="dateDesc">最后修改时间 (最近优先)</option>
-                        </optgroup>
-                        <optgroup label="更多">
-                            <option value="sizeAsc">大小 (更小优先)</option>
-                            <option value="sizeDesc">大小 (更大优先)</option>
-                            <option value="typeAsc">类型 (A-Z)</option>
-                            <option value="typeDesc">类型 (Z-A)</option>
-                        </optgroup>
-                    </select>
-                </label>
+               <h3>为什么需要这个？</h3>
+               <p>因工作原因，在处理一些作品图片类征集活动时，需要将所有图片进行截图，生成它们的预览小图。之前是通过 Microsoft Store 应用商店的 Pictureflect Photo Viewer Pro 看图工具，有个很干净的 Grid 网格视图，再通过 FastStone Capture 截图工具，具有滚动长截图功能。然后将作品分成若干个文件夹，分开截图。虽然这已经很方便了，但总就免不了许多体力活。我希望更偷懒一点，更自动化一些。于是，就有了这个~</p>
+
+               <h3>我的数据是保密的吗？</h3>
+               <p>是的，你操作的文件不会离开你的电脑。这些文件不会被其他任何人访问到，此页面提供的服务也只能在您本地生效，它只为你工作，加载过程中也没有任何东西通过网络进行传输。 </p>
+
+               <h3>这网站是谁做的？</h3>
+               <p>你好，我是<a href="https://github.com/XHXIAIEIN">XHXIAIEIN</a>，是一名独立游戏开发者，正在使用 <a href="https://www.construct.net/a/260259?t=construct3">Construct 3</a> 引擎开发游戏。</p>
+               
+               <h3>版本记录</h3>
+               <p>最后更新日期: 2024-06-06</p>
             </div>
         </details>
-    </div>
 
-    <div id="progressContainer">
-        <p id="progressText"></p>
-        <div id="progressBar"></div>
-    </div>
-
-    <div id="linksContainer"></div>
-
-    <button id="captureButton">生成截图</button>
-
-    <details id="about" class="centered"> 
-        <summary>更多信息</summary>
-        <div class="content">
-           <h3>这个网站是做什么的？</h3>
-           <p>点击页面虚线框的按钮，指定一个本地文件夹，网站会帮助你将文件夹中的图片以网格布局进行排列显示，还可以点击截图按钮，一键进行截图。这里还提供了一些简单的参数选项，可以调整页面显示图片的列数、每张图片的间距等。</p>
-
-           <h3>为什么需要这个？</h3>
-           <p>因工作原因，在处理一些作品图片类征集活动时，需要将所有图片进行截图，生成它们的预览小图。之前是通过 Microsoft Store 应用商店的 Pictureflect Photo Viewer Pro 看图工具，有个很干净的 Grid 网格视图，再通过 FastStone Capture 截图工具，具有滚动长截图功能。然后将作品分成若干个文件夹，分开截图。虽然这已经很方便了，但总就免不了许多体力活。我希望更偷懒一点，更自动化一些。于是，就有了这个~</p>
-
-           <h3>我的数据是保密的吗？</h3>
-           <p>是的，你操作的文件不会离开你的电脑。这些文件不会被其他任何人访问到，此页面提供的服务也只能在您本地生效，它只为你工作，加载过程中也没有任何东西通过网络进行传输。 </p>
-
-           <h3>这网站是谁做的？</h3>
-           <p>你好，我是<a href="https://github.com/XHXIAIEIN">XHXIAIEIN</a>，是一名独立游戏开发者，正在使用 <a href="https://www.construct.net/a/260259?t=construct3">Construct 3</a> 引擎开发游戏。</p>
-           
-           <h3>版本记录</h3>
-           <p>最后更新日期: 2024-06-06</p>
+        <div id="configPanel">
+            <div class="configGroup">
+                <label>每列显示:<input type="number" id="columns" value="4" min="1"></label>
+                <label>单张截图包含行数:<input type="number" id="rows" value="8" min="1"></label>
+                <label>截图最大宽度:<input type="number" id="maxWidth" value="1200" min="100"></label>
+                <label>截图背景色:<input type="color" id="bgColor" value="#000000"></label>
+            </div>
+            <div id="configAdvanced">
+                <details>
+                    <summary>高级设置</summary>
+                    <div class="configGroup">
+                        <label>图片间距:<input type="number" id="columnGap" value="2" min="0"></label>
+                        <label>图片行距:<input type="number" id="rowGap" value="2" min="0"></label>
+                        <label>页面水平边距:<input type="number" id="paddingX" value="2" min="0"></label>
+                        <label>页面垂直边距:<input type="number" id="paddingY" value="2" min="0"></label>
+                        <label>图片圆角:<input type="number" id="imageBorderRadius" value="0" min="0"></label>
+                        <label>页面圆角:<input type="number" id="pageBorderRadius" value="0" min="0"></label>
+                        <label>超过数量打包下载:<input type="number" id="fileThreshold" value="5" min="1"></label>
+                        <label>
+                            排序:
+                            <select id="sortOrder">
+                                <optgroup label="基础">
+                                    <option value="nameAsc">名称 (A-Z)</option>
+                                    <option value="nameDesc">名称 (Z-A)</option>
+                                    <option value="dateAsc">最后修改时间 (最早优先)</option>
+                                    <option value="dateDesc">最后修改时间 (最近优先)</option>
+                                </optgroup>
+                                <optgroup label="更多">
+                                    <option value="sizeAsc">大小 (更小优先)</option>
+                                    <option value="sizeDesc">大小 (更大优先)</option>
+                                    <option value="typeAsc">类型 (A-Z)</option>
+                                    <option value="typeDesc">类型 (Z-A)</option>
+                                </optgroup>
+                            </select>
+                        </label>
+                    </div>
+                </details>
+            </div>
         </div>
 
-    </details>
+        <div id="progressContainer">
+            <p id="progressText"></p>
+            <div id="linksContainer"></div>
+        </div>
 
-    <div id="photoWallContainer">
-        <div id="photoWall"></div>
+        <button id="captureButton">生成截图</button>
+
+        <div id="photoWallContainer">
+            <div id="photoWall"></div>
+        </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
