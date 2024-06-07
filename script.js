@@ -11,8 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
         rowGapInput: document.getElementById('rowGap'),
         paddingXInput: document.getElementById('paddingX'),
         paddingYInput: document.getElementById('paddingY'),
-        capturePaddingXInput: document.getElementById('capturePaddingX'),
-        capturePaddingYInput: document.getElementById('capturePaddingY'),
         bgColorInput: document.getElementById('bgColor'),
         photoWall: document.getElementById('photoWall'),
         fileThresholdInput: document.getElementById('fileThreshold'),
@@ -24,11 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
         imageBorderRadiusInput: document.getElementById('imageBorderRadius'),
         pageBorderRadiusInput: document.getElementById('pageBorderRadius'),
         imageFormat: document.getElementById('imageFormat'),
-        imageQuality: document.getElementById('imageQuality')
+        imageQuality: document.getElementById('imageQuality'),
+        imageAlignment: document.getElementById('imageAlignment')
     };
-
+    
     initializeUI(UI);
     UI.captureButton.addEventListener('click', () => captureAndSaveImages(UI));
+    UI.sortOrder.addEventListener('change', () => handleSort(UI));
 
     function initializeUI(UI) {
         const { dropArea, fileInput } = UI;
@@ -59,9 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return
         }
 
-        const { columnsInput, rowsInput, rowGapInput, columnGapInput, 
-            maxWidthInput, paddingXInput, paddingYInput, bgColorInput, 
-            imageBorderRadiusInput, pageBorderRadiusInput } = UI;
+        const { columnsInput, rowsInput, rowGapInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput, imageBorderRadiusInput, pageBorderRadiusInput, imageAlignment } = UI;
 
         photoWall.style.padding = `${paddingYInput.value}px ${paddingXInput.value}px`;
         photoWall.style.gridTemplateColumns = `repeat(${columnsInput.value}, 1fr)`;
@@ -70,6 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
         photoWall.style.maxWidth = `${maxWidthInput.value}px`;
         photoWall.style.backgroundColor = bgColorInput.value;
         photoWall.style.borderRadius = `${pageBorderRadiusInput.value}px`;
+        const alignmentMap = {center: 'center', top: 'flex-start', bottom: 'flex-end', left: 'flex-start',right: 'flex-end'};
+        photoWall.style.alignItems = alignmentMap[imageAlignment.value];
+        photoWall.style.justifyItems = alignmentMap[imageAlignment.value];
 
         document.querySelectorAll('.photo').forEach(photo => {
             photo.style.borderRadius = `${imageBorderRadiusInput.value}px`;
@@ -110,6 +111,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function handleSort(UI) {
+        const { fileInput, photoWall } = UI;
+        const files = Array.from(fileInput.files);
+        if (files.length > 0) {
+            handleFiles(files, UI);
+        } else {
+            const images = Array.from(photoWall.children);
+            const sortedImages = sortFiles(images.map(img => ({
+                name: img.getAttribute('name'),
+                lastModified: new Date(img.getAttribute('lastModified')).getTime(),
+                size: parseInt(img.getAttribute('size')),
+                type: img.getAttribute('type'),
+                width: parseInt(img.getAttribute('width')),
+                height: parseInt(img.getAttribute('height')),
+                aspectRatio: parseFloat(img.getAttribute('aspectRatio')),
+                resolution: parseInt(img.getAttribute('width')) * parseInt(img.getAttribute('height')),
+                element: img
+            })), UI.sortOrder.value);
+    
+            photoWall.innerHTML = '';
+            sortedImages.forEach(file => photoWall.appendChild(file.element));
+            updateLayout(UI);
+        }
+    }
+
     function sortFiles(files, order) {
         return files.sort((a, b) => {
             switch (order) {
@@ -121,10 +147,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'sizeDesc': return b.size - a.size;
                 case 'typeAsc': return a.type.localeCompare(b.type);
                 case 'typeDesc': return b.type.localeCompare(a.type);
+                case 'widthAsc': return a.width - b.width;
+                case 'widthDesc': return b.width - a.width;
+                case 'heightAsc': return a.height - b.height;
+                case 'heightDesc': return b.height - a.height;
+                case 'aspectRatioAsc': return a.aspectRatio - b.aspectRatio;
+                case 'aspectRatioDesc': return b.aspectRatio - a.aspectRatio;
+                case 'resolutionAsc': return (a.width * a.height) - (b.width * b.height);
+                case 'resolutionDesc': return (b.width * b.height) - (a.width * a.height);
                 default: return 0;
             }
         });
     }
+    
 
     function loadImage(file, photoWall) {
         return new Promise(resolve => {
@@ -143,6 +178,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const width = img.naturalWidth;
                 const height = img.naturalHeight;
                 const aspectRatio = (width / height).toFixed(2);
+                file.width = width;
+                file.height = height;
+                file.aspectRatio = parseFloat(aspectRatio);
+                file.resolution = width * height;
                 img.setAttribute('width', width);
                 img.setAttribute('height', height);
                 img.setAttribute('aspectRatio', aspectRatio);
