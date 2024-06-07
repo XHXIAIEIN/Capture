@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dropArea.addEventListener('drop', event => {event.preventDefault();dropArea.classList.remove('hover'); handleFiles(event.dataTransfer.files, UI)});
         dropArea.addEventListener('dragleave', () => dropArea.classList.remove('hover'));
         fileInput.addEventListener('change', event => handleFiles(event.target.files, UI));
-        
+
         Object.values(UI).forEach(element => { 
             if (element && ['INPUT', 'SELECT'].includes(element.tagName)) {
                 element.addEventListener('change', () => updateLayout(UI));
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             photoWallContainer.style.display = 'none';
             progressContainer.style.display = 'none';
             return
-        }
+        }1
 
         const { columnsInput, rowsInput, rowGapInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput, imageBorderRadiusInput, pageBorderRadiusInput, imageAlignment } = UI;
 
@@ -68,9 +68,15 @@ document.addEventListener('DOMContentLoaded', () => {
         photoWall.style.maxWidth = `${maxWidthInput.value}px`;
         photoWall.style.backgroundColor = bgColorInput.value;
         photoWall.style.borderRadius = `${pageBorderRadiusInput.value}px`;
-        const alignmentMap = {center: 'center', top: 'flex-start', bottom: 'flex-end', left: 'flex-start',right: 'flex-end'};
-        photoWall.style.alignItems = alignmentMap[imageAlignment.value];
-        photoWall.style.justifyItems = alignmentMap[imageAlignment.value];
+
+        photoWall.style.alignItems = imageAlignment.value;
+        photoWall.style.justifyItems = imageAlignment.value;
+        
+        document.querySelectorAll('.photo-container').forEach(container => {
+            container.style.borderRadius = `${imageBorderRadiusInput.value}px`;
+            container.style.alignItems = imageAlignment.value;
+            container.style.justifyContent = imageAlignment.value;
+        });
 
         document.querySelectorAll('.photo').forEach(photo => {
             photo.style.borderRadius = `${imageBorderRadiusInput.value}px`;
@@ -83,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleFiles(files, UI) {
         const { photoWall, sortOrder, progressContainer, progressText, captureButton, photoWallContainer } = UI;
+
         photoWall.innerHTML = '';
         photoWallContainer.style.display = 'none';
         progressContainer.style.display = 'block';
@@ -173,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
             img.setAttribute('type', file.type);
             img.setAttribute('date', file.lastModified);
             img.setAttribute('lastModified', formatDate(new Date(file.lastModified)));
-    
+
             img.onload = () => {
                 const width = img.naturalWidth;
                 const height = img.naturalHeight;
@@ -185,7 +192,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.setAttribute('width', width);
                 img.setAttribute('height', height);
                 img.setAttribute('aspectRatio', aspectRatio);
-                photoWall.appendChild(img);
+
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'photo-container';
+                imgContainer.appendChild(img);
+                imgContainer.setAttribute('width', width);
+                imgContainer.setAttribute('height', height);
+                imgContainer.setAttribute('aspectRatio', aspectRatio);
+
+                photoWall.appendChild(imgContainer);
                 resolve();
             };
         });

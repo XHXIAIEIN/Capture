@@ -107,9 +107,9 @@ summary {
 #photoWallContainer {
     width: 100%;
     display: flex;
-    justify-content: center;
     display: none;
     padding: 20px 0; 
+    justify-content: top;
 }
 
 #photoWall {
@@ -122,6 +122,15 @@ summary {
     padding:  0 15px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     background-color: #ffffff; 
+}
+
+.photo-container {
+    display: flex;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    overflow: hidden;
+    position: relative;
 }
 
 .photo {
