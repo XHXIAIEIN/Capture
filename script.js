@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
         rowGapInput: document.getElementById('rowGap'),
         paddingXInput: document.getElementById('paddingX'),
         paddingYInput: document.getElementById('paddingY'),
+        capturePaddingXInput: document.getElementById('capturePaddingX'),
+        capturePaddingYInput: document.getElementById('capturePaddingY'),
         bgColorInput: document.getElementById('bgColor'),
         photoWall: document.getElementById('photoWall'),
         fileThresholdInput: document.getElementById('fileThreshold'),
@@ -20,7 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
         linksContainer: document.getElementById('linksContainer'),
         progressBar: document.getElementById('progressBar'),
         imageBorderRadiusInput: document.getElementById('imageBorderRadius'),
-        pageBorderRadiusInput: document.getElementById('pageBorderRadius')
+        pageBorderRadiusInput: document.getElementById('pageBorderRadius'),
+        imageFormat: document.getElementById('imageFormat'),
+        imageQuality: document.getElementById('imageQuality')
     };
 
     initializeUI(UI);
@@ -82,11 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
         photoWallContainer.style.display = 'none';
 
         let fileArray = Array.from(files);
-        showProgress(progressContainer, progressText, '正在对文件排序...');
+        showProgress(progressContainer, progressText, '正在对文件排序...', true);
 
         fileArray = sortFiles(fileArray, sortOrder.value);
 
-        showProgress(progressContainer, progressText, '正在导入图片...', 1);
+        showProgress(progressContainer, progressText, '正在导入图片...', true);
 
         for (let index = 0; index < fileArray.length; index++) {
             const file = fileArray[index];
@@ -96,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        showProgress(progressContainer, progressText, '导入完成');
+        showProgress(progressContainer, progressText, '导入完成', false);
         updateLayout(UI);
 
         if (photoWall.children.length > 0) {
@@ -148,47 +152,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function captureAndSaveImages(UI) {
-        const { photoWall, rowsInput, columnsInput, fileThresholdInput, progressContainer, progressText, captureButton, linksContainer } = UI;
+        const { photoWall, rowsInput, columnsInput, fileThresholdInput, progressContainer, progressText, progressBar, captureButton, linksContainer, imageFormat, imageQuality } = UI;
         const photos = Array.from(photoWall.children);
         const imagesPerCapture = parseInt(rowsInput.value) * parseInt(columnsInput.value);
         const fileThreshold = parseInt(fileThresholdInput.value);
         const totalScreenshots = Math.ceil(photos.length / imagesPerCapture);
-    
+        const format = imageFormat.value;
+        const quality = parseInt(imageQuality.value) / 100;
+
         captureButton.style.display = 'none';
-        showProgress(progressContainer, progressText, '正在截图...');
-    
+        showProgress(progressContainer, progressText, '正在截图...', true);
+
         const formattedDate = formatDate(new Date());
         linksContainer.innerHTML = '';
-    
+
         if (totalScreenshots <= fileThreshold) {
-            await processImages(photos, imagesPerCapture, totalScreenshots, UI, false);
-            showProgress(progressContainer, progressText, '截图完成');
+            await processImages(photos, imagesPerCapture, UI, false, format, quality);
+            showProgress(progressContainer, progressText, '截图完成', false);
         } else {
             const zip = new JSZip();
-            await processImages(photos, imagesPerCapture, totalScreenshots, UI, true, zip);
-            showProgress(progressContainer, progressText, '正在打包...\n此过程需要更多的时间，请耐心等待。');
-            await zip.generateAsync({ type: 'blob' }).then(content => {
+            await processImages(photos, imagesPerCapture, UI, true, format, quality, zip);
+            showProgress(progressContainer, progressText, '正在打包...\n此过程需要更多的时间，请耐心等待。', false);
+            await zip.generateAsync({
+                type: 'blob',
+                compression: 'DEFLATE',
+                compressionOptions: { level: 9 },
+                onUpdate: (metadata) => {
+                    const percentage = Math.min(Math.round(metadata.percent), 100);
+                    progressBar.style.width = `${percentage}%`;
+                    progressText.innerText = `正在打包... ${percentage}%`;
+                }
+            }).then(content => {
                 saveAs(content, `Screenshots_${formattedDate}.zip`);
-                showProgress(progressContainer, progressText, '完成');
+                addDownloadLink(linksContainer, imgData, fileName);
+                showProgress(progressContainer, progressText, '完成', false);
             });
         }
     }
     
-    async function processImages(photos, imagesPerCapture, totalScreenshots, UI, addToZip, zip = null) {
+    async function processImages(photos, imagesPerCapture, UI, addToZip, format, quality, zip = null) {
         const { progressText, linksContainer } = UI;
         for (let i = 0; i < photos.length; i += imagesPerCapture) {
-            const fileName = `${(i / imagesPerCapture + 1).toString().padStart(3, '0')}.png`;
-            const imgData = await captureAndSaveImage(photos.slice(i, i + imagesPerCapture), addToZip ? null : fileName, UI);
+            const fileName = `${(i / imagesPerCapture + 1).toString().padStart(3, '0')}.${format}`;
+            const imgData = await captureAndSaveImage(photos.slice(i, i + imagesPerCapture), addToZip ? null : fileName, UI, format, quality);
             if (addToZip) {
                 zip.file(fileName, imgData, { base64: true });
             } else {
                 addDownloadLink(linksContainer, imgData, fileName);
             }
-            updateProgress(progressText, (i + imagesPerCapture) / photos.length, '正在截图...');
+            updateProgress(progressText, (i + imagesPerCapture) / photos.length, '正在截图...', true);
         }
     }
 
-    async function captureAndSaveImage(photos, fileName, UI) {
+    async function captureAndSaveImage(photos, fileName, UI, format, quality) {
         const { columnsInput, rowGapInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput, pageBorderRadiusInput } = UI;
         const fragment = document.createDocumentFragment();
 
@@ -197,12 +213,19 @@ document.addEventListener('DOMContentLoaded', () => {
             fragment.appendChild(clone);
         });
 
-        const tempDiv = createTempDiv({ fragment, columnsInput, rowGapInput, columnGapInput, paddingYInput, paddingXInput, bgColorInput, maxWidthInput, pageBorderRadiusInput });
+        const tempDiv = createTempDiv({ columnsInput, rowGapInput, columnGapInput, paddingYInput, paddingXInput, bgColorInput, maxWidthInput, fragment, pageBorderRadiusInput });
         document.body.appendChild(tempDiv);
 
         const canvas = await html2canvas(tempDiv, { backgroundColor: null });
         document.body.removeChild(tempDiv);
-        const dataUrl = canvas.toDataURL('image/png');
+
+        let dataUrl;
+        if (format === 'jpg' || format === 'avif') {
+            dataUrl = canvas.toDataURL(`image/${format}`, quality);
+        } else {
+            dataUrl = canvas.toDataURL(`image/${format}`);
+        }
+
         if (fileName) {
             saveAs(dataUrl, fileName);
         }
@@ -224,10 +247,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return tempDiv;
     }
 
-    function showProgress(container, textElement, text, progress = 100) {
+    function showProgress(container, textElement, text, progress = 100, percentage=false) {
         container.style.display = 'block';
         textElement.innerText = text;
-        updateProgress(textElement, progress / 100, text);
+        if(percentage){
+            updateProgress(textElement, progress / 100, text);
+        }
     }
 
     function updateProgress(textElement, percentage, text) {

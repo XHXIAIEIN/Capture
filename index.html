@@ -38,7 +38,7 @@
         <div id="configPanel">
             <div class="configGroup">
                 <label>每列显示:<input type="number" id="columns" value="4" min="1"></label>
-                <label>单张截图包含行数:<input type="number" id="rows" value="8" min="1"></label>
+                <label>单张截图包含行数:<input type="number" id="rows" value="6" min="1"></label>
                 <label>截图最大宽度:<input type="number" id="maxWidth" value="1200" min="100"></label>
                 <label>截图背景色:<input type="color" id="bgColor" value="#000000"></label>
             </div>
@@ -69,6 +69,19 @@
                                     <option value="typeDesc">类型 (Z-A)</option>
                                 </optgroup>
                             </select>
+                        </label>
+                        <label>
+                            格式
+                            <select id="imageFormat">
+                                <option value="png">PNG</option>
+                                <option value="jpg">JPG</option>
+                                <option value="webp">WebP</option>
+                                <option value="avif">AVIF</option>
+                            </select>
+                        </label>
+                        <label>
+                            质量 (仅对 JPG 和 AVIF 有效):
+                            <input type="range" id="imageQuality" min="0" max="100" value="100">
                         </label>
                     </div>
                 </details>
