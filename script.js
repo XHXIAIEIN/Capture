@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { photoWall, sortOrder, progressContainer, progressText, captureButton, photoWallContainer } = UI;
         photoWall.innerHTML = '';
         photoWallContainer.style.display = 'none';
+        progressContainer.style.display = 'block';
 
         let fileArray = Array.from(files);
         showProgress(progressContainer, progressText, '正在对文件排序...', true);
