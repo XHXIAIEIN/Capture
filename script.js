@@ -159,13 +159,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalScreenshots = Math.ceil(photos.length / imagesPerCapture);
         const format = imageFormat.value;
         const quality = parseInt(imageQuality.value) / 100;
-
+    
         captureButton.style.display = 'none';
         showProgress(progressContainer, progressText, '正在截图...', true);
-
+    
         const formattedDate = formatDate(new Date());
         linksContainer.innerHTML = '';
-
+    
         if (totalScreenshots <= fileThreshold) {
             await processImages(photos, imagesPerCapture, UI, false, format, quality);
             showProgress(progressContainer, progressText, '截图完成', false);
@@ -184,11 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }).then(content => {
                 saveAs(content, `Screenshots_${formattedDate}.zip`);
-                addDownloadLink(linksContainer, imgData, fileName);
                 showProgress(progressContainer, progressText, '完成', false);
             });
         }
     }
+    
     
     async function processImages(photos, imagesPerCapture, UI, addToZip, format, quality, zip = null) {
         const { progressText, linksContainer } = UI;
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             updateProgress(progressText, (i + imagesPerCapture) / photos.length, '正在截图...', true);
         }
-    }
+    }    
 
     async function captureAndSaveImage(photos, fileName, UI, format, quality) {
         const { columnsInput, rowGapInput, columnGapInput, maxWidthInput, paddingXInput, paddingYInput, bgColorInput, pageBorderRadiusInput } = UI;
