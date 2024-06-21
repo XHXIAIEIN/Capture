@@ -2,7 +2,7 @@
 
 ## 在线体验
 
-https://xhxiaiein.github.io/GalleryCapture/
+https://xhxiaiein.github.io/Capture/
 
 ## 简介
 
