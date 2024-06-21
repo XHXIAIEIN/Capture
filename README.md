@@ -1,4 +1,4 @@
-# GalleryCapture
+# Capture
 
 ## 在线体验
 
