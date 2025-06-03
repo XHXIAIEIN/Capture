@@ -49,8 +49,8 @@ a:hover {
 }
 
 #dropArea.hover {
-    border-color: #007bff;
-    color: #007bff;
+    border-color: #6c757d;
+    color: #495057;
 }
 
 #configPanel, #progressContainer {
@@ -106,10 +106,99 @@ summary {
 
 #photoWallContainer {
     width: 100%;
-    display: flex;
     display: none;
     padding: 20px 0; 
     justify-content: top;
+    position: relative;
+}
+
+#photoWallContainer:not(:empty) {
+    cursor: pointer;
+}
+
+#photoWallContainer.drag-hover {
+    outline: 2px dashed #ccc;
+    outline-offset: -2px;
+}
+
+.add-more-hint {
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    aspect-ratio: 1;
+}
+
+.add-more-hint::before {
+    content: '📁';
+    font-size: 32px;
+    display: block;
+    margin-bottom: 8px;
+    animation: floatIcon 2s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
+}
+
+.add-more-hint:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.add-more-hint:active {
+    transform: translateY(0px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.add-more-hint p {
+    margin: 0;
+    font-weight: 500;
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.add-more-hint .main-text {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    opacity: 1;
+}
+
+/* 添加一个脉冲效果 */
+.add-more-hint::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 12px;
+    animation: pulse 3s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    70% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
 }
 
 #photoWall {
@@ -138,6 +227,134 @@ summary {
     width: 100%;
     height: auto;
     object-fit: cover;
+}
+
+
+
+/* iOS风格拖拽样式 */
+.ios-placeholder {
+    border: 2px dashed #007bff !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    overflow: hidden !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    background: transparent !important;
+}
+
+@keyframes placeholderPulse {
+    0%, 100% {
+        border-color: #007bff;
+        box-shadow: 0 0 0 rgba(0, 123, 255, 0.4);
+    }
+    50% {
+        border-color: #0056b3;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.6);
+    }
+}
+
+/* iOS拖拽模式全局样式 */
+.ios-drag-mode {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.ios-drag-mode * {
+    cursor: grabbing !important;
+}
+
+/* iOS拖拽中的图片容器 */
+.photo-container.ios-dragging {
+    opacity: 0.3 !important;
+    transform: scale(0.95) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.photo-container.ios-dragging::before {
+    opacity: 0 !important;
+}
+
+/* 拖拽克隆样式 */
+.drag-clone {
+    position: fixed !important;
+    z-index: 10000 !important;
+    pointer-events: none !important;
+    transform: scale(1.1) rotate(5deg) !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
+    border-radius: 12px !important;
+    transition: none !important;
+    opacity: 0.9 !important;
+}
+
+.drag-clone .photo {
+    border-radius: 12px !important;
+}
+
+/* iOS风格图片容器样式 */
+.photo-container {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform, opacity;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.photo-container:hover {
+    transform: translateZ(0) scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.photo-container:active {
+    transform: translateZ(0) scale(0.98);
+}
+
+/* 长按提示样式 */
+.photo-container::before {
+    content: '长按拖拽';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 10;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.photo-container:hover::before {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+/* 长按进行中的视觉反馈 */
+.photo-container.long-pressing {
+    transform: scale(0.98) !important;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3) !important;
+}
+
+.photo-container.long-pressing::before {
+    content: '继续长按...';
+    background: rgba(0, 123, 255, 0.9);
+    opacity: 1;
+}
+
+/* 移动设备上的提示 */
+@media (hover: none) and (pointer: coarse) {
+    .photo-container::before {
+        content: '长按移动';
+    }
 }
 
 #captureButton {

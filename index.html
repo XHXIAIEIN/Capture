@@ -31,7 +31,7 @@
                <p>你好，我是<a href="https://github.com/XHXIAIEIN">XHXIAIEIN</a>，是一名独立游戏开发者，使用 <a href="https://www.construct.net/a/260259?t=construct3">Construct 3</a> 引擎开发游戏。</p>
                
                <h3>版本记录</h3>
-               <p>最后更新日期: 2025-03-20</p>
+               <p>最后更新日期: 2025-06-03</p>
             </div>
         </details>
 
@@ -76,8 +76,23 @@
                         <option value="flex-end">底部</option>
                     </select>
                 </label>
-                <label>截图最大宽度:<input type="number" id="maxWidth" value="1200" min="100"></label>
-                <label>截图背景色:<input type="color" id="bgColor" value="#000000"></label>
+                <label>
+                    下载方式:
+                    <select id="downloadMode">
+                        <option value="folder">保存到文件夹</option>
+                        <option value="browser">浏览器下载</option>
+                        <option value="zip">打包下载</option>
+                    </select>
+                </label>
+                <label>
+                    下载格式
+                    <select id="imageFormat">
+                        <option value="webp">WebP</option>
+                        <option value="png">PNG</option>
+                        <option value="jpg">JPG</option>
+                        <option value="avif">AVIF</option>
+                    </select>
+                </label>
             </div>
             <div id="configAdvanced">
                 <details>
@@ -89,19 +104,18 @@
                         <label>页面上下边距:<input type="number" id="paddingY" value="2" min="0"></label>
                         <label>图片圆角:<input type="number" id="imageBorderRadius" value="0" min="0"></label>
                         <label>页面圆角:<input type="number" id="pageBorderRadius" value="0" min="0"></label>
-                        <label>截图超过数量打包下载:<input type="number" id="fileThreshold" value="5" min="1"></label>
-                        <label>
-                            格式
-                            <select id="imageFormat">
-                                <option value="webp">WebP</option>
-                                <option value="png">PNG</option>
-                                <option value="jpg">JPG</option>
-                                <option value="avif">AVIF</option>
-                            </select>
-                        </label>
+                        <label>截图最大宽度:<input type="number" id="maxWidth" value="1200" min="100"></label>
+                        <label>截图背景色:<input type="color" id="bgColor" value="#000000"></label>
                         <label>
                             质量 (仅对 JPG 和 AVIF 有效):
                             <input type="range" id="imageQuality" min="0" max="100" value="100">
+                        </label>
+                        <label>
+                            添加方式:
+                            <select id="appendMode">
+                                <option value="append">添加到末尾</option>
+                                <option value="sort">按当前排序插入</option>
+                            </select>
                         </label>
                     </div>
                 </details>
@@ -116,7 +130,12 @@
         <button id="captureButton">生成截图</button>
 
         <div id="photoWallContainer">
-            <div id="photoWall"></div>
+            <div id="photoWall">
+                <div id="addMoreHint" class="add-more-hint" style="display: none;">
+                    <div class="main-text">添加更多图片</div>
+                    <p>点击此处或拖拽文件到这里</p>
+                </div>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>
