@@ -99,16 +99,16 @@ class UIManager {
         this.isGenerating = false;
         this.isDragOverActive = false;
         this.lastClickTime = 0;
-        this.isImageDragging = false; // 全局图片拖拽状态
-        this.draggedClone = null; // iOS风格拖拽克隆
-        this.draggedElement = null; // 当前拖拽的元素
-        this.placeholder = null; // 占位符元素
-        this.dragState = null; // 拖拽状态
-        this.globalMoveHandler = null; // 全局移动事件处理器
-        this.globalEndHandler = null; // 全局结束事件处理器
-        this.lastPlaceholderPosition = null; // 上一次占位符位置
-        this.placeholderUpdateThrottle = false; // 占位符更新节流
-        this.captureLayer = null; // 事件捕获层
+        // 拖拽相关状态
+        this.isImageDragging = false;
+        this.draggedClone = null;
+        this.draggedElement = null;
+        this.insertIndicator = null;
+        this.dragState = null;
+        this.globalMoveHandler = null;
+        this.globalEndHandler = null;
+        this.lastInsertPosition = null;
+        this.dragStartThreshold = 5; // 拖拽启动距离阈值
         this.worker = null;
         this.initializeWorker();
         this.checkFileSystemSupport();
@@ -291,18 +291,36 @@ class UIManager {
         
         // 添加更多提示区域的点击事件
         this.UI.addMoreHint.addEventListener('click', (event) => {
-            // 检查是否正在进行图片拖拽
             if (this.isImageDragging) {
                 event.preventDefault();
                 event.stopPropagation();
                 return;
             }
-            
-            event.stopPropagation(); // 阻止事件冒泡
+
+            event.stopPropagation();
             const now = Date.now();
-            if (now - this.lastClickTime > 300) { // 300ms防抖
+            if (now - this.lastClickTime > 300) {
                 this.lastClickTime = now;
                 fileInput.click();
+            }
+        });
+
+        // 添加更多提示区域的拖拽效果
+        this.UI.addMoreHint.addEventListener('dragover', (event) => {
+            if (!this.isImageDragging) {
+                event.preventDefault();
+                this.UI.addMoreHint.classList.add('drag-over');
+            }
+        });
+        this.UI.addMoreHint.addEventListener('dragleave', () => {
+            this.UI.addMoreHint.classList.remove('drag-over');
+        });
+        this.UI.addMoreHint.addEventListener('drop', (event) => {
+            this.UI.addMoreHint.classList.remove('drag-over');
+            if (!this.isImageDragging && event.dataTransfer.files) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.handleFiles(event.dataTransfer.files, true);
             }
         });
         photoWallContainer.addEventListener('dragover', event => {
@@ -697,50 +715,35 @@ class UIManager {
         }
     }
 
-    // 连贯的拖拽交互系统
+    // 图片拖拽系统 - 直接拖拽模式
     setupImageDragEvents(imgContainer, photoWall) {
-        // 禁用默认拖拽
         imgContainer.draggable = false;
-        
-        // 鼠标/触摸开始事件
+
         const handleStart = (e) => {
             if (this.isImageDragging) return;
-            
+
             e.preventDefault();
             e.stopPropagation();
-            
+
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            
-            // 设置拖拽状态
+
+            // 设置拖拽准备状态
             this.dragState = {
                 container: imgContainer,
                 photoWall: photoWall,
                 startX: clientX,
                 startY: clientY,
-                longPressTimer: null,
-                isLongPressing: true
+                hasDragStarted: false
             };
-            
-            // 显示长按提示
-            imgContainer.classList.add('long-pressing');
-            
-            // 设置长按计时器
-            this.dragState.longPressTimer = setTimeout(() => {
-                if (this.dragState && this.dragState.isLongPressing) {
-                    this.startDragMode(imgContainer, photoWall);
-                }
-            }, 200);
-            
-            // 立即设置全局事件监听器
+
+            imgContainer.classList.add('drag-ready');
             this.setupGlobalDragListeners();
         };
 
-        // 绑定开始事件
         imgContainer.addEventListener('mousedown', handleStart);
         imgContainer.addEventListener('touchstart', handleStart, { passive: false });
 
-        // 点击事件处理
         imgContainer.addEventListener('click', (e) => {
             if (this.isImageDragging) {
                 e.preventDefault();
@@ -749,49 +752,42 @@ class UIManager {
             }
         });
 
-        // 为photoWall设置拖拽接收事件（只设置一次）
         if (!photoWall.hasAttribute('data-drag-setup')) {
             this.setupPhotoWallDragEvents(photoWall);
             photoWall.setAttribute('data-drag-setup', 'true');
         }
     }
 
-    // 设置全局事件监听器（确保拖拽连贯性）
     setupGlobalDragListeners() {
-        // 如果已经设置过，先清理
         if (this.globalMoveHandler || this.globalEndHandler) {
             this.cleanupGlobalListeners();
         }
 
-        // 全局移动事件
         this.globalMoveHandler = (e) => {
             if (!this.dragState) return;
-            
-            // 强制阻止默认行为和事件传播，确保拖拽优先级
+
             e.preventDefault();
             e.stopImmediatePropagation();
-            
+
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            
-            // 如果还在长按阶段，检查移动距离
-            if (this.dragState.isLongPressing) {
+
+            // 检测是否超过拖拽启动阈值
+            if (!this.dragState.hasDragStarted) {
                 const deltaX = Math.abs(clientX - this.dragState.startX);
                 const deltaY = Math.abs(clientY - this.dragState.startY);
-                
-                if (deltaX > 10 || deltaY > 10) {
-                    this.cancelDragState();
-                    return;
+
+                if (deltaX > this.dragStartThreshold || deltaY > this.dragStartThreshold) {
+                    this.dragState.hasDragStarted = true;
+                    this.startDragMode(this.dragState.container, this.dragState.photoWall);
                 }
             }
-            
-            // 如果在拖拽模式，更新位置
+
             if (this.isImageDragging) {
                 this.updateDragPosition(clientX, clientY, this.dragState.photoWall);
             }
         };
 
-        // 全局结束事件
         this.globalEndHandler = (e) => {
             if (this.dragState) {
                 if (this.isImageDragging) {
@@ -801,42 +797,19 @@ class UIManager {
             }
         };
 
-        // 绑定全局事件 - 使用捕获阶段确保优先级
-        document.addEventListener('mousemove', this.globalMoveHandler, { 
-            passive: false, 
-            capture: true 
-        });
-        document.addEventListener('touchmove', this.globalMoveHandler, { 
-            passive: false, 
-            capture: true 
-        });
-        document.addEventListener('mouseup', this.globalEndHandler, { 
-            capture: true 
-        });
-        document.addEventListener('touchend', this.globalEndHandler, { 
-            capture: true 
-        });
-        document.addEventListener('touchcancel', this.globalEndHandler, { 
-            capture: true 
-        });
-        
-        // 额外绑定window级别的事件作为备份
-        window.addEventListener('mousemove', this.globalMoveHandler, { 
-            passive: false 
-        });
-        window.addEventListener('touchmove', this.globalMoveHandler, { 
-            passive: false 
-        });
+        document.addEventListener('mousemove', this.globalMoveHandler, { passive: false, capture: true });
+        document.addEventListener('touchmove', this.globalMoveHandler, { passive: false, capture: true });
+        document.addEventListener('mouseup', this.globalEndHandler, { capture: true });
+        document.addEventListener('touchend', this.globalEndHandler, { capture: true });
+        document.addEventListener('touchcancel', this.globalEndHandler, { capture: true });
+        window.addEventListener('mousemove', this.globalMoveHandler, { passive: false });
+        window.addEventListener('touchmove', this.globalMoveHandler, { passive: false });
     }
 
-    // 清理全局事件监听器
     cleanupGlobalListeners() {
         if (this.globalMoveHandler) {
-            // 清理document级别的事件监听器
             document.removeEventListener('mousemove', this.globalMoveHandler, { capture: true });
             document.removeEventListener('touchmove', this.globalMoveHandler, { capture: true });
-            
-            // 清理window级别的事件监听器
             window.removeEventListener('mousemove', this.globalMoveHandler);
             window.removeEventListener('touchmove', this.globalMoveHandler);
         }
@@ -849,43 +822,26 @@ class UIManager {
         this.globalEndHandler = null;
     }
 
-    // 取消拖拽状态
     cancelDragState() {
         if (this.dragState) {
-            if (this.dragState.longPressTimer) {
-                clearTimeout(this.dragState.longPressTimer);
-            }
             if (this.dragState.container) {
-                this.dragState.container.classList.remove('long-pressing');
+                this.dragState.container.classList.remove('drag-ready');
             }
             this.dragState = null;
         }
-        
-        // 清理事件捕获层
-        if (this.captureLayer) {
-            this.captureLayer.remove();
-            this.captureLayer = null;
-        }
-        
-        // 清理占位符状态
-        this.lastPlaceholderPosition = null;
-        this.placeholderUpdateThrottle = false;
-        
+        this.lastInsertPosition = null;
         this.cleanupGlobalListeners();
     }
 
-    // 开始拖拽模式
     startDragMode(imgContainer, photoWall) {
         if (this.isImageDragging || !this.dragState) return;
-        
+
         this.isImageDragging = true;
-        this.dragState.isLongPressing = false;
-        
-        // 震动反馈
+
         if (navigator.vibrate) {
-            navigator.vibrate(50);
+            navigator.vibrate(30);
         }
-        
+
         // 创建拖拽克隆
         const rect = imgContainer.getBoundingClientRect();
         const clone = imgContainer.cloneNode(true);
@@ -898,260 +854,144 @@ class UIManager {
             height: ${rect.height}px;
             z-index: 10000;
             pointer-events: none;
-            transform: translate(${rect.left}px, ${rect.top}px) scale(1.1) rotate(2deg);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-            border-radius: 12px;
-            transition: none;
-            opacity: 0.9;
+            transform: translate(${rect.left}px, ${rect.top}px) scale(1.05);
+            will-change: transform;
         `;
-        
+
         document.body.appendChild(clone);
         this.draggedClone = clone;
-        
-        // 创建占位符
-        const placeholder = document.createElement('div');
-        placeholder.className = 'ios-placeholder';
-        placeholder.style.cssText = `
-            width: 100%;
-            height: ${imgContainer.offsetHeight}px;
-            border: 2px dashed #007bff;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            animation: placeholderPulse 1.5s ease-in-out infinite;
-        `;
-        
-        // 创建预览图片
-        const previewImg = imgContainer.querySelector('.photo').cloneNode(true);
-        previewImg.style.cssText = `
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.6;
-            filter: grayscale(80%) brightness(0.7);
-        `;
-        
-        // 创建遮罩层
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
-            pointer-events: none;
-            backdrop-filter: blur(1px);
-        `;
-        overlay.textContent = '📍 放置位置';
-        
-        placeholder.appendChild(previewImg);
-        placeholder.appendChild(overlay);
-        
-        imgContainer.parentNode.insertBefore(placeholder, imgContainer.nextSibling);
-        this.placeholder = placeholder;
-        
+
+        // 创建插入指示器
+        const indicator = document.createElement('div');
+        indicator.className = 'drag-insert-indicator';
+        this.insertIndicator = indicator;
+
         // 设置原始元素样式
-        imgContainer.style.opacity = '0.3';
-        imgContainer.style.transform = 'scale(0.95)';
-        imgContainer.classList.add('ios-dragging');
+        imgContainer.classList.add('dragging');
+        imgContainer.classList.remove('drag-ready');
         this.draggedElement = imgContainer;
-        
-        // 立即更新克隆位置到当前鼠标位置
+
+        // 更新克隆位置
         this.updateDragPosition(this.dragState.startX, this.dragState.startY, photoWall);
-        
-        // 创建事件捕获层，确保拖拽事件不被其他元素拦截
-        const captureLayer = document.createElement('div');
-        captureLayer.id = 'drag-capture-layer';
-        captureLayer.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 9999;
-            pointer-events: none;
-            background: transparent;
-        `;
-        document.body.appendChild(captureLayer);
-        this.captureLayer = captureLayer;
-        
-        // 全局样式
-        document.body.classList.add('ios-drag-mode');
+
+        document.body.classList.add('drag-mode-active');
         document.body.style.overflow = 'hidden';
         document.body.style.userSelect = 'none';
-        document.body.style.webkitUserSelect = 'none';
     }
 
-    // 更新拖拽位置
     updateDragPosition(x, y, photoWall) {
-        if (!this.draggedClone || !this.placeholder) return;
-        
-        // 更新克隆位置 - 直接跟随鼠标
+        if (!this.draggedClone) return;
+
         const offsetX = this.draggedClone.offsetWidth / 2;
         const offsetY = this.draggedClone.offsetHeight / 2;
-        
-        this.draggedClone.style.transform = `translate(${x - offsetX}px, ${y - offsetY}px) scale(1.1) rotate(2deg)`;
-        
-        // 使用节流更新占位符位置，防止边缘抖动
-        if (!this.placeholderUpdateThrottle) {
-            this.placeholderUpdateThrottle = true;
-            requestAnimationFrame(() => {
-                this.updatePlaceholderPosition(photoWall, x, y);
-                this.placeholderUpdateThrottle = false;
-            });
-        }
+
+        this.draggedClone.style.transform = `translate(${x - offsetX}px, ${y - offsetY}px) scale(1.05)`;
+
+        requestAnimationFrame(() => {
+            this.updateInsertPosition(photoWall, x, y);
+        });
     }
 
-    // 结束拖拽模式
     endDragMode() {
         if (!this.isImageDragging) return;
-        
+
         // 执行重排序
-        if (this.placeholder && this.draggedElement) {
-            this.placeholder.parentNode.insertBefore(this.draggedElement, this.placeholder);
+        if (this.insertIndicator && this.insertIndicator.parentNode && this.draggedElement) {
+            this.insertIndicator.parentNode.insertBefore(this.draggedElement, this.insertIndicator);
         }
-        
+
         // 清理拖拽元素
         if (this.draggedClone) {
             this.draggedClone.remove();
             this.draggedClone = null;
         }
-        
-        if (this.placeholder) {
-            this.placeholder.remove();
-            this.placeholder = null;
+
+        if (this.insertIndicator) {
+            this.insertIndicator.remove();
+            this.insertIndicator = null;
         }
-        
+
         if (this.draggedElement) {
-            this.draggedElement.style.opacity = '1';
-            this.draggedElement.style.transform = '';
-            this.draggedElement.classList.remove('ios-dragging', 'long-pressing');
+            this.draggedElement.classList.remove('dragging', 'drag-ready');
             this.draggedElement = null;
         }
-        
-        // 清理事件捕获层
-        if (this.captureLayer) {
-            this.captureLayer.remove();
-            this.captureLayer = null;
-        }
-        
-        // 恢复全局样式
-        document.body.classList.remove('ios-drag-mode');
+
+        document.body.classList.remove('drag-mode-active');
         document.body.style.overflow = '';
         document.body.style.userSelect = '';
-        document.body.style.webkitUserSelect = '';
-        
-        // 清理占位符状态
-        this.lastPlaceholderPosition = null;
-        this.placeholderUpdateThrottle = false;
-        
+
+        this.lastInsertPosition = null;
         this.isImageDragging = false;
     }
 
-    updatePlaceholderPosition(photoWall, x, y) {
-        if (!this.placeholder || !this.draggedElement) return;
-        
-        // 获取所有图片容器（排除正在拖拽的、占位符和addMoreHint）
-        const containers = Array.from(photoWall.children).filter(child => 
-            child.classList.contains('photo-container') && 
-            !child.classList.contains('ios-dragging') &&
-            !child.classList.contains('ios-placeholder') &&
+    updateInsertPosition(photoWall, x, y) {
+        if (!this.insertIndicator || !this.draggedElement) return;
+
+        const containers = Array.from(photoWall.children).filter(child =>
+            child.classList.contains('photo-container') &&
+            !child.classList.contains('dragging') &&
             child.id !== 'addMoreHint'
         );
-        
+
         if (containers.length === 0) {
-            if (this.placeholder.parentNode !== photoWall) {
-                // 插入到addMoreHint之前
-                const addMoreHint = photoWall.querySelector('#addMoreHint');
-                if (addMoreHint) {
-                    photoWall.insertBefore(this.placeholder, addMoreHint);
-                } else {
-                    photoWall.appendChild(this.placeholder);
-                }
+            const addMoreHint = photoWall.querySelector('#addMoreHint');
+            if (addMoreHint && this.insertIndicator.parentNode !== photoWall) {
+                photoWall.insertBefore(this.insertIndicator, addMoreHint);
+            } else if (!addMoreHint) {
+                photoWall.appendChild(this.insertIndicator);
             }
             return;
         }
-        
-        // 智能位置检测：加入阈值防止抖动
-        let bestContainer = null;
-        let insertAfter = false;
+
+        let bestTarget = null;
+        let insertBefore = true;
         let minDistance = Infinity;
-        const POSITION_THRESHOLD = 20; // 20px阈值防止边缘抖动
-        
+
         for (const container of containers) {
             const rect = container.getBoundingClientRect();
-            
-            // 计算到容器中心的距离
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            const distanceToCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-            
-            if (distanceToCenter < minDistance) {
-                minDistance = distanceToCenter;
-                bestContainer = container;
-                
-                // 增强的位置判断：加入阈值检测
-                const relativeX = x - centerX;
-                const relativeY = y - centerY;
-                
-                // 使用阈值防止在边界附近频繁切换
-                if (Math.abs(relativeX) > POSITION_THRESHOLD || Math.abs(relativeY) > POSITION_THRESHOLD) {
-                    // 只有在明显偏向某一侧时才改变插入位置
-                    insertAfter = relativeX > 0 || relativeY > 0;
-                } else {
-                    // 在阈值范围内，保持上一次的决定
-                    if (this.lastPlaceholderPosition && this.lastPlaceholderPosition.container === container) {
-                        insertAfter = this.lastPlaceholderPosition.insertAfter;
-                    } else {
-                        insertAfter = relativeX > 0 || relativeY > 0;
-                    }
-                }
+
+            // 计算到左边缘和右边缘的距离
+            const distToLeft = Math.abs(x - rect.left) + Math.abs(y - centerY);
+            const distToRight = Math.abs(x - rect.right) + Math.abs(y - centerY);
+
+            if (distToLeft < minDistance) {
+                minDistance = distToLeft;
+                bestTarget = container;
+                insertBefore = true;
+            }
+            if (distToRight < minDistance) {
+                minDistance = distToRight;
+                bestTarget = container;
+                insertBefore = false;
             }
         }
-        
-        // 检查是否需要移动占位符
-        if (bestContainer) {
-            const currentPosition = {
-                container: bestContainer,
-                insertAfter: insertAfter
-            };
-            
-            // 只有当位置真正改变时才移动，减少DOM操作
-            const needsMove = !this.lastPlaceholderPosition || 
-                             this.lastPlaceholderPosition.container !== bestContainer ||
-                             this.lastPlaceholderPosition.insertAfter !== insertAfter;
-            
+
+        if (bestTarget) {
+            const newPosition = { target: bestTarget, before: insertBefore };
+
+            const needsMove = !this.lastInsertPosition ||
+                             this.lastInsertPosition.target !== bestTarget ||
+                             this.lastInsertPosition.before !== insertBefore;
+
             if (needsMove) {
                 try {
-                    if (insertAfter) {
-                        bestContainer.parentNode.insertBefore(this.placeholder, bestContainer.nextSibling);
+                    if (insertBefore) {
+                        bestTarget.parentNode.insertBefore(this.insertIndicator, bestTarget);
                     } else {
-                        bestContainer.parentNode.insertBefore(this.placeholder, bestContainer);
+                        bestTarget.parentNode.insertBefore(this.insertIndicator, bestTarget.nextSibling);
                     }
-                    this.lastPlaceholderPosition = currentPosition;
+                    this.lastInsertPosition = newPosition;
                 } catch (error) {
-                    console.warn('占位符插入失败:', error);
+                    console.warn('插入指示器位置更新失败:', error);
                 }
             }
         }
     }
 
-    // 简化的photoWall事件处理
     setupPhotoWallDragEvents(photoWall) {
-        // 点击事件处理
         photoWall.addEventListener('click', (e) => {
-            // 如果点击的是图片相关元素，阻止事件传播
             if (e.target.closest('.photo-container') || e.target.closest('.photo')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1542,14 +1382,22 @@ class UIManager {
 
     updateDropAreaText() {
         const { dropArea, photoWall, addMoreHint, appendMode } = this.UI;
-        if (photoWall.children.length > 0) {
+        // 只计算photo-container数量
+        const photoCount = Array.from(photoWall.children).filter(
+            child => child.classList.contains('photo-container')
+        ).length;
+
+        if (photoCount > 0) {
             dropArea.textContent = '添加更多图片';
-            addMoreHint.style.display = 'block';
-            // 更新提示文字以反映当前添加模式
+            addMoreHint.style.display = 'flex';
+            // 更新提示文字
             const modeText = appendMode.value === 'append' ? '添加到末尾' : '按排序插入';
-            addMoreHint.querySelector('p').textContent = `点击此处或拖拽文件到这里（${modeText}）`;
+            const pElement = addMoreHint.querySelector('p');
+            if (pElement) {
+                pElement.textContent = `${modeText}`;
+            }
         } else {
-            dropArea.textContent = '导入图片文件夹';
+            dropArea.textContent = '点击此处，导入文件夹';
             addMoreHint.style.display = 'none';
         }
     }
@@ -1574,17 +1422,15 @@ class UIManager {
             this.worker.terminate();
             this.worker = null;
         }
-        
-        // 清理拖拽状态
+
         if (this.isImageDragging) {
             this.endDragMode();
         }
-        
+
         if (this.dragState) {
             this.cancelDragState();
         }
-        
-        // 清理全局事件监听器
+
         this.cleanupGlobalListeners();
     }
 }
