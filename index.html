@@ -12,8 +12,27 @@
 <body>
     <div class="container">
         <h1>相册截图工具</h1>
-        <div id="dropArea">点击此处，导入文件夹</div>
-        <input type="file" id="fileInput" accept="image/*" webkitdirectory multiple style="display:none;">
+        <div id="dropArea" class="drop-area">
+            <div class="drop-area-content">
+                <div class="drop-icon"></div>
+                <div class="drop-text">点击导入图片</div>
+                <div class="drop-hint">支持多选 · 可拖拽文件到此处</div>
+            </div>
+            <div class="drop-buttons">
+                <button type="button" id="btnSelectImages" class="drop-btn primary">
+                    <span class="btn-icon">🖼️</span>
+                    <span>选择图片</span>
+                </button>
+                <button type="button" id="btnSelectFolder" class="drop-btn secondary">
+                    <span class="btn-icon">📁</span>
+                    <span>选择文件夹</span>
+                </button>
+            </div>
+        </div>
+        <!-- 多选图片输入（适用于所有设备） -->
+        <input type="file" id="fileInputImages" accept="image/*" multiple style="display:none;">
+        <!-- 文件夹输入（仅桌面端支持） -->
+        <input type="file" id="fileInputFolder" accept="image/*" webkitdirectory multiple style="display:none;">
 
         <details id="about" class="centered"> 
             <summary>更多信息</summary>

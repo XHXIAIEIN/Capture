@@ -31,26 +31,231 @@ a:hover {
     color: #003975;
 }
 
-#dropArea {
-    border: 2px dashed #ccc;
-    border-radius: 10px;
-    width: 80%;
+/* 导入区域样式 */
+.drop-area {
+    border: 2px dashed #d0d5dd;
+    border-radius: 16px;
+    width: 90%;
     max-width: 600px;
-    height: 200px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
     margin: 20px;
-    padding: 20px;
-    color: #ccc;
-    cursor: pointer;
-    transition: border-color 0.3s, color 0.3s;
+    padding: 32px 24px;
+    background: #fff;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-#dropArea.hover {
-    border-color: #6c757d;
+.drop-area:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 16px rgba(0,123,255,0.1);
+}
+
+.drop-area.hover {
+    border-color: #007bff;
+    border-style: solid;
+    background: rgba(0, 123, 255, 0.04);
+}
+
+.drop-area-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.drop-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e8f4ff 0%, #f0f7ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.drop-icon::before {
+    content: '📷';
+    font-size: 28px;
+}
+
+.drop-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #344054;
+}
+
+.drop-hint {
+    font-size: 13px;
+    color: #98a2b3;
+}
+
+/* 按钮组 */
+.drop-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.drop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+}
+
+.drop-btn .btn-icon {
+    font-size: 18px;
+}
+
+.drop-btn.primary {
+    background: #007bff;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+}
+
+.drop-btn.primary:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+}
+
+.drop-btn.primary:active {
+    transform: translateY(0);
+}
+
+.drop-btn.secondary {
+    background: #f8f9fa;
     color: #495057;
+    border: 1px solid #e9ecef;
+}
+
+.drop-btn.secondary:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.drop-btn.secondary.hidden {
+    display: none;
+}
+
+/* 移动端优化 */
+@media (max-width: 640px) {
+    body {
+        padding: 12px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .drop-area {
+        width: 100%;
+        padding: 24px 16px;
+        margin: 12px 0;
+    }
+
+    .drop-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .drop-icon::before {
+        font-size: 24px;
+    }
+
+    .drop-text {
+        font-size: 16px;
+    }
+
+    .drop-buttons {
+        width: 100%;
+    }
+
+    .drop-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 14px 16px;
+        min-width: 0;
+    }
+
+    .drop-btn span:not(.btn-icon) {
+        font-size: 14px;
+    }
+
+    #configPanel {
+        padding: 16px;
+        margin: 12px 0;
+    }
+
+    .configGroup {
+        gap: 8px;
+    }
+
+    .configGroup label {
+        flex: 1 1 100%;
+    }
+
+    #photoWall {
+        padding: 0 8px;
+        gap: 6px;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .add-more-hint {
+        min-height: 100px;
+        padding: 16px 12px;
+    }
+
+    .add-more-hint .add-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .add-more-hint .add-icon::before {
+        font-size: 20px;
+    }
+
+    .add-more-hint .main-text {
+        font-size: 13px;
+    }
+
+    .add-more-hint p {
+        font-size: 11px;
+    }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+    .photo-container:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .photo-container:active {
+        transform: scale(0.98);
+    }
+
+    .drop-btn:hover {
+        transform: none;
+    }
+
+    .drop-btn:active {
+        transform: scale(0.98);
+    }
 }
 
 #configPanel, #progressContainer {

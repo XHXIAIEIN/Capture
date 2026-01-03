@@ -208,7 +208,10 @@ class UIManager {
     initializeUI() {
         return {
             dropArea: document.getElementById('dropArea'),
-            fileInput: document.getElementById('fileInput'),
+            fileInputImages: document.getElementById('fileInputImages'),
+            fileInputFolder: document.getElementById('fileInputFolder'),
+            btnSelectImages: document.getElementById('btnSelectImages'),
+            btnSelectFolder: document.getElementById('btnSelectFolder'),
             captureButton: document.getElementById('captureButton'),
             sortOrder: document.getElementById('sortOrder'),
             maxWidthInput: document.getElementById('maxWidth'),
@@ -235,19 +238,70 @@ class UIManager {
         };
     }
 
-    setupEventListeners() {
-        const { dropArea, fileInput, captureButton, sortOrder, photoWallContainer } = this.UI;
-        
-        // 主拖拽区域事件
-        dropArea.addEventListener('click', () => {
-            // 检查是否正在进行图片拖拽
-            if (this.isImageDragging) {
-                return;
+    // 检测是否为移动设备
+    isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) ||
+               ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+    }
+
+    // 检测是否支持文件夹选择
+    supportsFolderSelection() {
+        const input = document.createElement('input');
+        return 'webkitdirectory' in input;
+    }
+
+    // 根据设备类型初始化UI
+    initializeDeviceUI() {
+        const { btnSelectFolder, dropArea } = this.UI;
+        const isMobile = this.isMobileDevice();
+        const supportsFolder = this.supportsFolderSelection();
+
+        // 移动端或不支持文件夹选择时隐藏文件夹按钮
+        if (isMobile || !supportsFolder) {
+            btnSelectFolder.classList.add('hidden');
+        }
+
+        // 更新提示文字
+        const dropHint = dropArea.querySelector('.drop-hint');
+        if (dropHint) {
+            if (isMobile) {
+                dropHint.textContent = '支持多选 · 从相册选择';
+            } else {
+                dropHint.textContent = '支持多选 · 可拖拽文件到此处';
             }
+        }
+    }
+
+    setupEventListeners() {
+        const { dropArea, fileInputImages, fileInputFolder, btnSelectImages, btnSelectFolder, captureButton, sortOrder, photoWallContainer } = this.UI;
+
+        // 初始化：检测设备类型并调整UI
+        this.initializeDeviceUI();
+
+        // 选择图片按钮
+        btnSelectImages.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.isImageDragging) return;
+            fileInputImages.click();
+        });
+
+        // 选择文件夹按钮
+        btnSelectFolder.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.isImageDragging) return;
+            fileInputFolder.click();
+        });
+
+        // 主拖拽区域点击事件（点击内容区域时打开图片选择）
+        dropArea.addEventListener('click', (e) => {
+            // 如果点击的是按钮，不处理
+            if (e.target.closest('.drop-btn')) return;
+            if (this.isImageDragging) return;
             const now = Date.now();
-            if (now - this.lastClickTime > 300) { // 300ms防抖
+            if (now - this.lastClickTime > 300) {
                 this.lastClickTime = now;
-                fileInput.click();
+                fileInputImages.click();
             }
         });
         dropArea.addEventListener('dragover', event => {
@@ -257,14 +311,14 @@ class UIManager {
                 dropArea.classList.add('hover');
             }
         });
-        dropArea.addEventListener('drop', event => {
+        dropArea.addEventListener('drop', async (event) => {
             // 只处理文件拖拽，忽略图片重排序
-            if (!this.isImageDragging && event.dataTransfer.files) {
+            if (!this.isImageDragging) {
                 event.preventDefault();
                 dropArea.classList.remove('hover');
-                // 检查是否已有图片，如果有则为增量添加模式
                 const isAppend = this.UI.photoWall.children.length > 0;
-                this.handleFiles(event.dataTransfer.files, isAppend);
+                // 处理拖放数据（支持跨应用拖放）
+                await this.handleDropData(event.dataTransfer, isAppend);
             }
         });
         dropArea.addEventListener('dragleave', () => dropArea.classList.remove('hover'));
@@ -301,7 +355,7 @@ class UIManager {
             const now = Date.now();
             if (now - this.lastClickTime > 300) {
                 this.lastClickTime = now;
-                fileInput.click();
+                fileInputImages.click();
             }
         });
 
@@ -315,12 +369,12 @@ class UIManager {
         this.UI.addMoreHint.addEventListener('dragleave', () => {
             this.UI.addMoreHint.classList.remove('drag-over');
         });
-        this.UI.addMoreHint.addEventListener('drop', (event) => {
+        this.UI.addMoreHint.addEventListener('drop', async (event) => {
             this.UI.addMoreHint.classList.remove('drag-over');
-            if (!this.isImageDragging && event.dataTransfer.files) {
+            if (!this.isImageDragging) {
                 event.preventDefault();
                 event.stopPropagation();
-                this.handleFiles(event.dataTransfer.files, true);
+                await this.handleDropData(event.dataTransfer, true);
             }
         });
         photoWallContainer.addEventListener('dragover', event => {
@@ -342,21 +396,18 @@ class UIManager {
                 }
             }
         });
-        photoWallContainer.addEventListener('drop', event => {
+        photoWallContainer.addEventListener('drop', async (event) => {
             // 简化的拖拽类型检查
             if (this.isImageDragging) {
                 // 如果是图片重排序，不处理任何事件，让photoWall处理
                 return;
             }
-            
-            const isFileDrag = event.dataTransfer.files && event.dataTransfer.files.length > 0;
-            if (isFileDrag) {
-                event.preventDefault();
-                photoWallContainer.classList.remove('drag-hover');
-                this.isDragOverActive = false;
-                // 图片区域总是增量添加模式
-                this.handleFiles(event.dataTransfer.files, true);
-            }
+
+            event.preventDefault();
+            photoWallContainer.classList.remove('drag-hover');
+            this.isDragOverActive = false;
+            // 图片区域总是增量添加模式
+            await this.handleDropData(event.dataTransfer, true);
         });
         photoWallContainer.addEventListener('dragleave', (event) => {
             // 简化的拖拽类型检查
@@ -375,13 +426,20 @@ class UIManager {
             }, 100);
         });
         
-        fileInput.addEventListener('change', event => {
-            // 检查是否已有图片，如果有则为增量添加模式
+        // 图片选择输入变化事件
+        fileInputImages.addEventListener('change', event => {
             const isAppend = this.UI.photoWall.children.length > 0;
             this.handleFiles(event.target.files, isAppend);
-            // 重置文件输入，允许选择相同文件
             event.target.value = '';
         });
+
+        // 文件夹选择输入变化事件
+        fileInputFolder.addEventListener('change', event => {
+            const isAppend = this.UI.photoWall.children.length > 0;
+            this.handleFiles(event.target.files, isAppend);
+            event.target.value = '';
+        });
+
         captureButton.addEventListener('click', () => this.captureAndSaveImages());
         sortOrder.addEventListener('change', () => this.handleSort());
         this.UI.appendMode.addEventListener('change', () => this.updateDropAreaText());
@@ -396,8 +454,9 @@ class UIManager {
         document.addEventListener('click', (event) => {
             if (this.isImageDragging) {
                 // 检查是否点击的是文件输入相关的元素
-                if (event.target === fileInput || 
-                    event.target.closest('#dropArea') || 
+                if (event.target === fileInputImages ||
+                    event.target === fileInputFolder ||
+                    event.target.closest('#dropArea') ||
                     event.target.closest('#photoWallContainer') ||
                     event.target.closest('#addMoreHint')) {
                     event.preventDefault();
@@ -406,6 +465,72 @@ class UIManager {
                 }
             }
         }, true); // 使用捕获阶段
+    }
+
+    // 处理拖放数据（支持跨应用拖放）
+    async handleDropData(dataTransfer, isAppend = false) {
+        const files = [];
+
+        // 优先处理文件列表
+        if (dataTransfer.files && dataTransfer.files.length > 0) {
+            for (const file of dataTransfer.files) {
+                if (file.type.startsWith('image/')) {
+                    files.push(file);
+                }
+            }
+        }
+
+        // 如果没有文件，尝试从items获取（iOS跨应用拖放）
+        if (files.length === 0 && dataTransfer.items) {
+            const itemPromises = [];
+
+            for (const item of dataTransfer.items) {
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        files.push(file);
+                    }
+                } else if (item.kind === 'string' && item.type === 'text/uri-list') {
+                    // 处理图片URL（某些应用可能传递URL）
+                    itemPromises.push(new Promise((resolve) => {
+                        item.getAsString(async (url) => {
+                            try {
+                                if (url && (url.startsWith('http') || url.startsWith('blob:'))) {
+                                    const response = await fetch(url);
+                                    const blob = await response.blob();
+                                    if (blob.type.startsWith('image/')) {
+                                        const fileName = `image_${Date.now()}.${blob.type.split('/')[1] || 'png'}`;
+                                        const file = new File([blob], fileName, { type: blob.type });
+                                        resolve(file);
+                                        return;
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('无法获取拖放的图片URL:', e);
+                            }
+                            resolve(null);
+                        });
+                    }));
+                }
+            }
+
+            // 等待所有URL处理完成
+            if (itemPromises.length > 0) {
+                const urlFiles = await Promise.all(itemPromises);
+                for (const file of urlFiles) {
+                    if (file) files.push(file);
+                }
+            }
+        }
+
+        if (files.length > 0) {
+            this.handleFiles(files, isAppend);
+        } else {
+            this.showProgress(this.UI.progressContainer, this.UI.progressText, '未检测到图片文件', false);
+            setTimeout(() => {
+                this.UI.progressContainer.style.display = 'none';
+            }, 2000);
+        }
     }
 
     async handleFiles(files, isAppend = false) {
@@ -1029,12 +1154,9 @@ class UIManager {
     }
 
     handleSort() {
-        const { fileInput, photoWall, sortOrder, progressContainer, progressText } = this.UI;
-        const files = Array.from(fileInput.files);
-        
-        if (files.length > 0) {
-            this.handleFiles(files);
-        } else if (this.currentProcessedFiles && this.worker) {
+        const { photoWall, sortOrder, progressContainer, progressText } = this.UI;
+
+        if (this.currentProcessedFiles && this.currentProcessedFiles.length > 0 && this.worker) {
             // Use worker to sort already processed files
             this.showProgress(progressContainer, progressText, '正在重新排序...', true);
             this.worker.postMessage({
