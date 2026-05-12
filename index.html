@@ -1,173 +1,265 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>相册截图工具</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <h1>相册截图工具</h1>
-        <div id="dropArea">点击此处，导入文件夹</div>
-        <input type="file" id="fileInput" accept="image/*" webkitdirectory multiple style="display:none;">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>相册截图工具</title>
+		<link rel="stylesheet" href="style.css" />
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+	</head>
+	<body>
+		<div class="container">
+			<h1>相册截图工具</h1>
+			<div id="dropArea">点击此处，导入文件夹</div>
+			<input type="file" id="fileInput" accept="image/*" webkitdirectory multiple style="display: none" />
 
-        <details id="about" class="centered"> 
-            <summary>更多信息</summary>
-            <div class="content">
-               <h3>这个网站是做什么的？</h3>
-               <p>点击页面上方的虚线框区域，上传一个本地文件夹，网站会将文件夹中的图片以网格布局进行排列显示，之后你可以点击截图按钮，一键保存截图。网站还提供了一些简单的参数选项，可以调整页面图片显示列数、每张图片间距等，还支持调整截图保存的文件格式。我推荐使用 Webp 图片格式，同样是无损格式，它的文件体积比 PNG 更小，目前各个平台也支持了 Webp 格式使用。</p>
+			<details id="about" class="centered">
+				<summary>更多信息</summary>
+				<div class="content">
+					<h3>这个网站是做什么的？</h3>
+					<p>
+						点击页面上方的虚线框区域，上传一个本地文件夹，网站会将文件夹中的图片以网格布局进行排列显示，之后你可以点击截图按钮，一键保存截图。网站还提供了一些简单的参数选项，可以调整页面图片显示列数、每张图片间距等，还支持调整截图保存的文件格式。我推荐使用
+						Webp 图片格式，同样是无损格式，它的文件体积比 PNG 更小，目前各个平台也支持了 Webp 格式使用。
+					</p>
 
-               <h3>为什么需要这个？</h3>
-               <p>因工作原因，在处理作品图片类征集活动时，需要将所有图片进行截图，生成它们的预览小图。之前是通过 Microsoft Store 应用商店的 Pictureflect Photo Viewer Pro 看图工具，有个很干净的 Grid 网格视图，再通过 FastStone Capture 截图工具，具有滚动长截图功能，然后将作品分成若干个文件夹，分开截图，再使用 Photopshop 进行切片导出。虽然这在某种程度上已经很方便了，但总就免不了许多体力活。我希望更偷懒点，更自动化一些。于是，就有了这个~</p>
+					<h3>为什么需要这个？</h3>
+					<p>
+						因工作原因，在处理作品图片类征集活动时，需要将所有图片进行截图，生成它们的预览小图。之前是通过 Microsoft Store 应用商店的 Pictureflect Photo Viewer Pro 看图工具，有个很干净的 Grid 网格视图，再通过 FastStone Capture
+						截图工具，具有滚动长截图功能，然后将作品分成若干个文件夹，分开截图，再使用 Photopshop 进行切片导出。虽然这在某种程度上已经很方便了，但总就免不了许多体力活。我希望更偷懒点，更自动化一些。于是，就有了这个~
+					</p>
 
-               <h3>我的数据是保密的吗？</h3>
-               <p>是的，你操作的文件不会离开你的电脑。这些文件不会被其他任何人访问到，此页面提供的链接也只能在您本地生效，它只为你工作，加载过程中也没有任何东西通过网络进行传输。 </p>
+					<h3>我的数据是保密的吗？</h3>
+					<p>是的，你操作的文件不会离开你的电脑。这些文件不会被其他任何人访问到，此页面提供的链接也只能在您本地生效，它只为你工作，加载过程中也没有任何东西通过网络进行传输。</p>
 
-               <h3>这网站是谁做的？</h3>
-               <p>你好，我是<a href="https://github.com/XHXIAIEIN">XHXIAIEIN</a>，是一名独立游戏开发者，使用 <a href="https://www.construct.net/a/260259?t=construct3">Construct 3</a> 引擎开发游戏。</p>
-               
-               <h3>版本记录</h3>
-               <p>最后更新日期: 2026-05-12</p>
-            </div>
-        </details>
+					<h3>这网站是谁做的？</h3>
+					<p>
+						你好，我是
+						<a href="https://github.com/XHXIAIEIN">XHXIAIEIN</a>
+						，是一名独立游戏开发者，使用
+						<a href="https://www.construct.net/a/260259?t=construct3">Construct 3</a>
+						引擎开发游戏。
+					</p>
 
-        <div id="configPanel">
-            <div class="configGroup">
-                <label>每列显示:<input type="number" id="columns" value="4" min="1"></label>
-                <label>单张截图行数:<input type="number" id="rows" value="6" min="1"></label>
-                <label>
-                    排序:
-                    <select id="sortOrder">
-                        <optgroup label="基础">
-                            <option value="nameAsc">名称 (A-Z)</option>
-                            <option value="nameDesc">名称 (Z-A)</option>
-                            <option value="dateAsc">最后修改时间 (最早优先)</option>
-                            <option value="dateDesc">最后修改时间 (最近优先)</option>
-                        </optgroup>
-                        <optgroup label="更多">
-                            <option value="sizeAsc">大小 (更小优先)</option>
-                            <option value="sizeDesc">大小 (更大优先)</option>
-                            <option value="typeAsc">类型 (A-Z)</option>
-                            <option value="typeDesc">类型 (Z-A)</option>
-                        </optgroup>
-                        <optgroup label="图像">
-                            <option value="widthAsc">宽度 (更小优先)</option>
-                            <option value="widthDesc">宽度 (更大优先)</option>
-                            <option value="heightAsc">高度 (更小优先)</option>
-                            <option value="heightDesc">高度 (更大优先)</option>
-                        </optgroup>
-                        <optgroup label="比例">
-                            <option value="aspectRatioAsc">宽高比 (高度优先)</option>
-                            <option value="aspectRatioDesc">宽高比 (宽度优先)</option>
-                            <option value="resolutionAsc">分辨率 (更小优先)</option>
-                            <option value="resolutionDesc">分辨率 (更大优先)</option>
-                        </optgroup>
-                    </select>
-                </label>
-                <label>
-                    图片对齐:
-                    <select id="imageAlignment">
-                        <option value="flex-start">顶部</option>
-                        <option value="center">居中</option>
-                        <option value="flex-end">底部</option>
-                    </select>
-                </label>
-                <label>
-                    下载方式:
-                    <select id="downloadMode">
-                        <option value="folder">保存到文件夹</option>
-                        <option value="browser">浏览器下载</option>
-                        <option value="zip">打包下载</option>
-                    </select>
-                </label>
-                <label>
-                    下载格式
-                    <select id="imageFormat">
-                        <option value="webp">WebP</option>
-                        <option value="png">PNG</option>
-                        <option value="jpg">JPG</option>
-                        <option value="avif">AVIF</option>
-                    </select>
-                </label>
-            </div>
-            <div id="configAdvanced">
-                <details>
-                    <summary>高级设置</summary>
-                    <div class="configGroup">
-                        <label>图片间距:<input type="number" id="columnGap" value="2" min="0"></label>
-                        <label>图片行距:<input type="number" id="rowGap" value="2" min="0"></label>
-                        <label>页面左右边距:<input type="number" id="paddingX" value="2" min="0"></label>
-                        <label>页面上下边距:<input type="number" id="paddingY" value="2" min="0"></label>
-                        <label>图片圆角:<input type="number" id="imageBorderRadius" value="0" min="0"></label>
-                        <label>页面圆角:<input type="number" id="pageBorderRadius" value="0" min="0"></label>
-                        <label>截图最大宽度:<input type="number" id="maxWidth" value="1200" min="100"></label>
-                        <label>截图背景色:<input type="color" id="bgColor" value="#000000"></label>
-                        <label>
-                            质量 (仅对 JPG 和 AVIF 有效):
-                            <input type="range" id="imageQuality" min="0" max="100" value="100">
-                        </label>
-                        <label>
-                            添加方式:
-                            <select id="appendMode">
-                                <option value="append">添加到末尾</option>
-                                <option value="sort">按当前排序插入</option>
-                            </select>
-                        </label>
-                        <label class="span-full">
-                            <span class="label-row">
-                                <span>排序表达式 (上方下拉变化时自动同步):</span>
-                                <button type="button" id="sortExpressionHelp" class="hint-toggle" aria-label="查看字段字典">?</button>
-                            </span>
-                            <input type="text" id="sortExpression" placeholder="例：ORDER BY type ASC, size DESC, name">
-                            <small id="sortExpressionHint" class="hint-text"></small>
-                        </label>
-                    </div>
-                </details>
-            </div>
-        </div>
+					<h3>版本记录</h3>
+					<p>最后更新日期: 2026-05-12</p>
+				</div>
+			</details>
 
-        <div id="progressContainer">
-            <p id="progressText"></p>
-            <div id="linksContainer"></div>
-        </div>
+			<div id="configPanel">
+				<div class="configGroup">
+					<label>
+						每列显示:
+						<input type="number" id="columns" value="4" min="1" />
+					</label>
+					<label>
+						单张截图行数:
+						<input type="number" id="rows" value="6" min="1" />
+					</label>
+					<label>
+						排序:
+						<select id="sortOrder">
+							<optgroup label="基础">
+								<option value="nameAsc">名称 (A-Z)</option>
+								<option value="nameDesc">名称 (Z-A)</option>
+								<option value="dateAsc">最后修改时间 (最早优先)</option>
+								<option value="dateDesc">最后修改时间 (最近优先)</option>
+							</optgroup>
+							<optgroup label="更多">
+								<option value="sizeAsc">大小 (更小优先)</option>
+								<option value="sizeDesc">大小 (更大优先)</option>
+								<option value="typeAsc">类型 (A-Z)</option>
+								<option value="typeDesc">类型 (Z-A)</option>
+							</optgroup>
+							<optgroup label="图像">
+								<option value="widthAsc">宽度 (更小优先)</option>
+								<option value="widthDesc">宽度 (更大优先)</option>
+								<option value="heightAsc">高度 (更小优先)</option>
+								<option value="heightDesc">高度 (更大优先)</option>
+							</optgroup>
+							<optgroup label="比例">
+								<option value="aspectRatioAsc">宽高比 (高度优先)</option>
+								<option value="aspectRatioDesc">宽高比 (宽度优先)</option>
+								<option value="resolutionAsc">分辨率 (更小优先)</option>
+								<option value="resolutionDesc">分辨率 (更大优先)</option>
+							</optgroup>
+						</select>
+					</label>
+					<label>
+						图片对齐:
+						<select id="imageAlignment">
+							<option value="flex-start">顶部</option>
+							<option value="center">居中</option>
+							<option value="flex-end">底部</option>
+						</select>
+					</label>
+					<label>
+						下载方式:
+						<select id="downloadMode">
+							<option value="folder">保存到文件夹</option>
+							<option value="browser">浏览器下载</option>
+							<option value="zip">打包下载</option>
+						</select>
+					</label>
+					<label>
+						下载格式
+						<select id="imageFormat">
+							<option value="webp">WebP</option>
+							<option value="png">PNG</option>
+							<option value="jpg">JPG</option>
+							<option value="avif">AVIF</option>
+						</select>
+					</label>
+				</div>
+				<div id="configAdvanced">
+					<details>
+						<summary>高级设置</summary>
+						<div class="configGroup">
+							<label>
+								图片间距:
+								<input type="number" id="columnGap" value="2" min="0" />
+							</label>
+							<label>
+								图片行距:
+								<input type="number" id="rowGap" value="2" min="0" />
+							</label>
+							<label>
+								页面左右边距:
+								<input type="number" id="paddingX" value="2" min="0" />
+							</label>
+							<label>
+								页面上下边距:
+								<input type="number" id="paddingY" value="2" min="0" />
+							</label>
+							<label>
+								图片圆角:
+								<input type="number" id="imageBorderRadius" value="0" min="0" />
+							</label>
+							<label>
+								页面圆角:
+								<input type="number" id="pageBorderRadius" value="0" min="0" />
+							</label>
+							<label>
+								截图最大宽度:
+								<input type="number" id="maxWidth" value="1200" min="100" />
+							</label>
+							<label>
+								截图背景色:
+								<input type="color" id="bgColor" value="#000000" />
+							</label>
+							<label>
+								质量 (仅对 JPG 和 AVIF 有效):
+								<input type="range" id="imageQuality" min="0" max="100" value="100" />
+							</label>
+							<label>
+								添加方式:
+								<select id="appendMode">
+									<option value="append">添加到末尾</option>
+									<option value="sort">按当前排序插入</option>
+								</select>
+							</label>
+							<label class="span-full">
+								<span class="label-row">
+									<span>排序表达式:</span>
+									<button type="button" id="sortExpressionHelp" class="hint-toggle" aria-label="查看字段字典">?</button>
+								</span>
+								<input type="text" id="sortExpression" placeholder="例：type ASC, size DESC, name" />
+								<small id="sortExpressionHint" class="hint-text"></small>
+							</label>
+						</div>
+					</details>
+				</div>
+			</div>
 
-        <button id="captureButton">生成截图</button>
+			<div id="progressContainer">
+				<p id="progressText"></p>
+				<div id="linksContainer"></div>
+			</div>
 
-        <div id="photoWallContainer">
-            <div id="photoWall"></div>
-            <div id="addMoreHint" class="add-more-hint" style="display: none;">
-                <span class="main-text">+ 添加更多图片</span>
-                <span class="mode-hint"></span>
-            </div>
-        </div>
-    </div>
-    <div id="sortExpressionPopover" class="popover" hidden>
-        <button type="button" class="popover-close" id="sortExpressionPopoverClose" aria-label="关闭">×</button>
-        <h4>语法</h4>
-        <p><code>[ORDER BY] 字段 [ASC|DESC], ...</code></p>
-        <p>简写：<code>-字段</code> 等同 <code>字段 DESC</code></p>
-        <h4>示例</h4>
-        <ul>
-            <li><code>name</code></li>
-            <li><code>type, -size</code></li>
-            <li><code>ORDER BY aspect DESC, resolution ASC</code></li>
-        </ul>
-        <h4>字段</h4>
-        <table>
-            <tr><td><code>name</code></td><td>文件名</td></tr>
-            <tr><td><code>size</code></td><td>文件大小</td></tr>
-            <tr><td><code>type</code></td><td>MIME 类型</td></tr>
-            <tr><td><code>date</code> / <code>modified</code></td><td>最后修改时间</td></tr>
-            <tr><td><code>width</code> / <code>w</code></td><td>图像宽度</td></tr>
-            <tr><td><code>height</code> / <code>h</code></td><td>图像高度</td></tr>
-            <tr><td><code>aspect</code> / <code>ratio</code></td><td>宽高比</td></tr>
-            <tr><td><code>resolution</code> / <code>pixels</code></td><td>像素总数</td></tr>
-        </table>
-    </div>
-    <script type="module" src="src/app.js"></script>
-</body>
+			<button id="captureButton">生成截图</button>
+
+			<div id="photoWallContainer">
+				<div id="photoWall"></div>
+				<div id="addMoreHint" class="add-more-hint" style="display: none">
+					<span class="main-text">+ 添加更多图片</span>
+					<span class="mode-hint"></span>
+				</div>
+			</div>
+		</div>
+		<div id="sortExpressionPopover" class="popover" hidden>
+			<div class="popover-header" id="sortExpressionPopoverHeader">
+				<span>排序表达式</span>
+				<button type="button" class="popover-close" id="sortExpressionPopoverClose" aria-label="关闭">×</button>
+			</div>
+			<div class="popover-body">
+			<h4>语法</h4>
+			<p><code>字段 [ASC|DESC], 字段 [ASC|DESC], ...</code></p>
+			<p>方向省略时默认 ASC。前缀 <code>ORDER BY</code> 可选，写不写都行。</p>
+			<p>简写：<code>-字段</code> 等同 <code>字段 DESC</code></p>
+			<h4>示例</h4>
+			<ul>
+				<li><code>name</code></li>
+				<li><code>type, -size</code></li>
+				<li><code>ORDER BY aspect DESC, resolution ASC</code></li>
+			</ul>
+			<h4>字段</h4>
+			<table>
+				<tr>
+					<td><code>name</code></td>
+					<td>文件名</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td>文件大小</td>
+				</tr>
+				<tr>
+					<td><code>type</code></td>
+					<td>MIME 类型</td>
+				</tr>
+				<tr>
+					<td>
+						<code>date</code>
+						/
+						<code>modified</code>
+					</td>
+					<td>最后修改时间</td>
+				</tr>
+				<tr>
+					<td>
+						<code>width</code>
+						/
+						<code>w</code>
+					</td>
+					<td>图像宽度</td>
+				</tr>
+				<tr>
+					<td>
+						<code>height</code>
+						/
+						<code>h</code>
+					</td>
+					<td>图像高度</td>
+				</tr>
+				<tr>
+					<td>
+						<code>aspect</code>
+						/
+						<code>ratio</code>
+					</td>
+					<td>宽高比</td>
+				</tr>
+				<tr>
+					<td>
+						<code>resolution</code>
+						/
+						<code>pixels</code>
+					</td>
+					<td>像素总数</td>
+				</tr>
+			</table>
+			</div>
+		</div>
+		<script type="module" src="src/app.js"></script>
+	</body>
 </html>

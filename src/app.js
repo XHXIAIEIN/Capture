@@ -10,7 +10,7 @@ const DOM_IDS = [
   'photoWallContainer', 'linksContainer', 'imageBorderRadius', 'pageBorderRadius',
   'imageFormat', 'imageQuality', 'imageAlignment', 'addMoreHint', 'appendMode',
   'sortExpression', 'sortExpressionHint', 'sortExpressionHelp',
-  'sortExpressionPopover', 'sortExpressionPopoverClose',
+  'sortExpressionPopover', 'sortExpressionPopoverClose', 'sortExpressionPopoverHeader',
 ];
 
 function collectDOM() {
@@ -121,7 +121,7 @@ class App {
   }
 
   bindPopover() {
-    const { sortExpressionHelp, sortExpressionPopover, sortExpressionPopoverClose } = this.ui;
+    const { sortExpressionHelp, sortExpressionPopover, sortExpressionPopoverClose, sortExpressionPopoverHeader } = this.ui;
     const hide = () => { sortExpressionPopover.hidden = true; };
     sortExpressionHelp.addEventListener('click', () => {
       sortExpressionPopover.hidden = !sortExpressionPopover.hidden;
@@ -129,6 +129,47 @@ class App {
     sortExpressionPopoverClose.addEventListener('click', hide);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') hide();
+    });
+    this.makeDraggable(sortExpressionPopover, sortExpressionPopoverHeader);
+  }
+
+  makeDraggable(panel, handle) {
+    let startX = 0, startY = 0, origX = 0, origY = 0, activeId = null;
+    const onMove = (e) => {
+      if (e.pointerId !== activeId) return;
+      const w = panel.offsetWidth;
+      const h = panel.offsetHeight;
+      const x = Math.max(0, Math.min(window.innerWidth - w, origX + e.clientX - startX));
+      const y = Math.max(0, Math.min(window.innerHeight - h, origY + e.clientY - startY));
+      panel.style.left = `${x}px`;
+      panel.style.top = `${y}px`;
+    };
+    const onUp = (e) => {
+      if (e.pointerId !== activeId) return;
+      activeId = null;
+      handle.classList.remove('dragging');
+      try { handle.releasePointerCapture(e.pointerId); } catch {}
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
+    };
+    handle.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.popover-close')) return;
+      e.preventDefault();
+      const rect = panel.getBoundingClientRect();
+      panel.style.right = 'auto';
+      panel.style.left = `${rect.left}px`;
+      panel.style.top = `${rect.top}px`;
+      startX = e.clientX;
+      startY = e.clientY;
+      origX = rect.left;
+      origY = rect.top;
+      activeId = e.pointerId;
+      handle.classList.add('dragging');
+      handle.setPointerCapture(e.pointerId);
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onUp);
+      handle.addEventListener('pointercancel', onUp);
     });
   }
 
