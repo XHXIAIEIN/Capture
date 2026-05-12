@@ -86,14 +86,15 @@
 							</optgroup>
 						</select>
 					</label>
-					<label>
+					<label class="span-full">
 						分组:
-						<select id="groupBy">
-							<option value="none">无分组</option>
-							<option value="orientation">方向 (横/竖/方)</option>
-							<option value="ext">扩展名</option>
-							<option value="aspect">宽高比档位</option>
-						</select>
+						<div class="tab-group" id="groupByTabs" role="tablist">
+							<button type="button" class="tab active" data-value="none" role="tab" aria-selected="true">无分组</button>
+							<button type="button" class="tab" data-value="orientation" role="tab" aria-selected="false">方向</button>
+							<button type="button" class="tab" data-value="ext" role="tab" aria-selected="false">扩展名</button>
+							<button type="button" class="tab" data-value="aspect" role="tab" aria-selected="false">宽高比</button>
+						</div>
+						<input type="hidden" id="groupBy" value="none" />
 					</label>
 					<label>
 						下载方式:

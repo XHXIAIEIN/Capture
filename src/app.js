@@ -9,7 +9,7 @@ const DOM_IDS = [
   'bgColor', 'photoWall', 'downloadMode', 'progressContainer', 'progressText',
   'photoWallContainer', 'linksContainer', 'imageBorderRadius', 'pageBorderRadius',
   'imageFormat', 'imageQuality', 'imageAlignment', 'addMoreHint', 'appendMode',
-  'sortExpression', 'sortExpressionHint', 'sortExpressionHelp', 'groupBy',
+  'sortExpression', 'sortExpressionHint', 'sortExpressionHelp', 'groupBy', 'groupByTabs',
   'sortExpressionPopover', 'sortExpressionPopoverClose', 'sortExpressionPopoverHeader',
 ];
 
@@ -105,6 +105,7 @@ class App {
     appendMode.addEventListener('change', () => this.updateDropAreaText());
     sortExpression.addEventListener('input', () => this.handleSortExpressionChange());
     groupBy.addEventListener('change', () => this.applySort());
+    this.bindGroupByTabs();
 
     this.bindPopover();
 
@@ -119,6 +120,24 @@ class App {
       sortExpression.value = SORT_PRESET_TO_EXPRESSION[sortOrder.value] || 'name ASC';
     }
     this.updateSortExpressionState();
+  }
+
+  bindGroupByTabs() {
+    const { groupByTabs, groupBy } = this.ui;
+    if (!groupByTabs) return;
+    groupByTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.tab');
+      if (!tab || !groupByTabs.contains(tab)) return;
+      const value = tab.dataset.value;
+      if (groupBy.value === value) return;
+      for (const t of groupByTabs.querySelectorAll('.tab')) {
+        const active = t === tab;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', active ? 'true' : 'false');
+      }
+      groupBy.value = value;
+      groupBy.dispatchEvent(new Event('change'));
+    });
   }
 
   bindPopover() {

@@ -251,18 +251,17 @@ export class FileImporter {
   resort(order, groupBy) {
     if (this.descriptors.length === 0) return;
     this._pendingGroupBy = groupBy;
-    if (this.worker) {
-      this.worker.postMessage({
-        type: 'sortFiles',
-        data: {
-          filesToSort: this.descriptors.map(({ element, ...rest }) => rest),
-          order,
-        },
-      });
-    } else {
-      this.descriptors = applyGrouping(sortFiles(this.descriptors, order), groupBy);
-      this.renderChunked(this.descriptors, false)
-        .then(() => this.onComplete?.({ added: 0, total: this.descriptors.length, sortedOnly: true }));
+    // Sort + group in main thread, then reorder existing DOM nodes.
+    // Avoids re-building photo elements and the cost of round-tripping File
+    // objects through the worker just to change order.
+    this.descriptors = applyGrouping(sortFiles(this.descriptors, order), groupBy);
+    this.reorderDom();
+    this.onComplete?.({ added: 0, total: this.descriptors.length, sortedOnly: true });
+  }
+
+  reorderDom() {
+    for (const desc of this.descriptors) {
+      if (desc.element) this.photoWall.appendChild(desc.element);
     }
   }
 

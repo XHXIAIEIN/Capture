@@ -76,7 +76,14 @@ class WorkerUtils {
 
     static async getImageDimensions(file) {
         // Workers don't have `Image`, but they do have `createImageBitmap`.
-        const bitmap = await createImageBitmap(file);
+        // Apply EXIF orientation so width/height match the displayed dimensions
+        // (iOS/Android photos are stored with raw landscape pixels + a rotate tag).
+        let bitmap;
+        try {
+            bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        } catch {
+            bitmap = await createImageBitmap(file);
+        }
         try {
             const width = bitmap.width;
             const height = bitmap.height;
@@ -213,46 +220,24 @@ class WorkerImageProcessor {
 // Message handler
 self.onmessage = async function(e) {
     const { type, data } = e.data;
-    
+
     try {
-        switch (type) {
-            case 'processFiles':
-                const { files, sortOrder, isAppend, appendMode, existingFiles } = data;
-                const processedFiles = await WorkerImageProcessor.processFileMetadata(files, sortOrder, isAppend, appendMode, existingFiles);
-                self.postMessage({
-                    type: 'filesProcessed',
-                    data: processedFiles,
-                    isAppend: isAppend
-                });
-                break;
-                
-            case 'createZip':
-                const { imageDataArray, format } = data;
-                const zipResult = await WorkerImageProcessor.createZipFile(imageDataArray, format);
-                self.postMessage({
-                    type: 'zipCreated',
-                    data: zipResult
-                });
-                break;
-                
-            case 'sortFiles':
-                const { filesToSort, order } = data;
-                const sortedFiles = WorkerUtils.sortFiles(filesToSort, order);
-                self.postMessage({
-                    type: 'filesSorted',
-                    data: sortedFiles
-                });
-                break;
-                
-            case 'test':
-                self.postMessage({
-                    type: 'test',
-                    data: { message: 'Worker 响应正常' }
-                });
-                break;
-                
-            default:
-                console.warn('Unknown message type:', type);
+        if (type === 'processFiles') {
+            const { files, sortOrder, isAppend, appendMode, existingFiles } = data;
+            const processedFiles = await WorkerImageProcessor.processFileMetadata(files, sortOrder, isAppend, appendMode, existingFiles);
+            self.postMessage({ type: 'filesProcessed', data: processedFiles, isAppend });
+        } else if (type === 'createZip') {
+            const { imageDataArray, format } = data;
+            const zipResult = await WorkerImageProcessor.createZipFile(imageDataArray, format);
+            self.postMessage({ type: 'zipCreated', data: zipResult });
+        } else if (type === 'sortFiles') {
+            const { filesToSort, order } = data;
+            const sortedFiles = WorkerUtils.sortFiles(filesToSort, order);
+            self.postMessage({ type: 'filesSorted', data: sortedFiles });
+        } else if (type === 'test') {
+            self.postMessage({ type: 'test', data: { message: 'Worker 响应正常' } });
+        } else {
+            console.warn('Unknown message type:', type);
         }
     } catch (error) {
         self.postMessage({
@@ -261,4 +246,4 @@ self.onmessage = async function(e) {
             phase: type
         });
     }
-}; 
+};

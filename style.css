@@ -84,6 +84,36 @@ a:hover {
     flex-basis: 100%;
 }
 
+.tab-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.tab-group .tab {
+    padding: 6px 14px;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #333;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1.2;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tab-group .tab:hover {
+    border-color: #0056b3;
+    color: #0056b3;
+}
+
+.tab-group .tab.active {
+    background: #0056b3;
+    border-color: #0056b3;
+    color: #fff;
+}
+
 .hint-text {
     margin-top: 4px;
     font-size: 12px;
