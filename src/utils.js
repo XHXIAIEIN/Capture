@@ -72,7 +72,87 @@ const SORT_COMPARATORS = {
   resolutionDesc: (a, b) => (b.resolution || (b.width * b.height)) - (a.resolution || (a.width * a.height)),
 };
 
-export function sortFiles(files, order) {
-  const cmp = SORT_COMPARATORS[order];
-  return cmp ? [...files].sort(cmp) : [...files];
+export const SORT_PRESET_TO_EXPRESSION = {
+  nameAsc: 'name ASC',
+  nameDesc: 'name DESC',
+  dateAsc: 'date ASC',
+  dateDesc: 'date DESC',
+  sizeAsc: 'size ASC',
+  sizeDesc: 'size DESC',
+  typeAsc: 'type ASC',
+  typeDesc: 'type DESC',
+  widthAsc: 'width ASC',
+  widthDesc: 'width DESC',
+  heightAsc: 'height ASC',
+  heightDesc: 'height DESC',
+  aspectRatioAsc: 'aspect ASC',
+  aspectRatioDesc: 'aspect DESC',
+  resolutionAsc: 'resolution ASC',
+  resolutionDesc: 'resolution DESC',
+};
+
+export const SORT_FIELD_ALIASES = {
+  name: 'name',
+  size: 'size',
+  type: 'type',
+  date: 'lastModified', modified: 'lastModified', lastmodified: 'lastModified',
+  width: 'width', w: 'width',
+  height: 'height', h: 'height',
+  aspect: 'aspectRatio', aspectratio: 'aspectRatio', ratio: 'aspectRatio',
+  resolution: 'resolution', pixels: 'resolution', res: 'resolution',
+};
+
+export function parseSortExpression(expr) {
+  const steps = [];
+  const errors = [];
+  if (!expr || typeof expr !== 'string') return { steps, errors };
+  const body = expr.trim().replace(/^order\s+by\s+/i, '');
+  for (const raw of body.split(/[,;]+/)) {
+    let token = raw.trim();
+    if (!token) continue;
+    let desc = false;
+    if (/^[-+]/.test(token)) {
+      desc = token.startsWith('-');
+      token = token.slice(1).trim();
+    }
+    const tail = token.match(/^(\S+)\s+(asc|desc)$/i);
+    let name;
+    if (tail) {
+      name = tail[1];
+      desc = /^desc$/i.test(tail[2]);
+    } else {
+      name = token;
+    }
+    const field = SORT_FIELD_ALIASES[name.toLowerCase()];
+    if (!field) {
+      errors.push(name);
+      continue;
+    }
+    steps.push({ field, desc });
+  }
+  return { steps, errors };
+}
+
+function compareBySteps(a, b, steps) {
+  for (const { field, desc } of steps) {
+    const va = a[field];
+    const vb = b[field];
+    let r;
+    if (typeof va === 'string' || typeof vb === 'string') {
+      r = String(va ?? '').localeCompare(String(vb ?? ''));
+    } else {
+      r = (va || 0) - (vb || 0);
+    }
+    if (r !== 0) return desc ? -r : r;
+  }
+  return 0;
+}
+
+export function sortFiles(files, criteria) {
+  if (typeof criteria === 'string' && SORT_COMPARATORS[criteria]) {
+    return [...files].sort(SORT_COMPARATORS[criteria]);
+  }
+  const steps = Array.isArray(criteria?.steps) ? criteria.steps : [];
+  if (steps.length === 0) return [...files];
+  return [...files].sort((a, b) => compareBySteps(a, b, steps));
 }

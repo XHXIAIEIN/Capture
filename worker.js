@@ -6,9 +6,25 @@ class WorkerUtils {
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}-${String(date.getMinutes()).padStart(2, '0')}-${String(date.getSeconds()).padStart(2, '0')}`;
     }
 
-    static sortFiles(files, order) {
+    static sortFiles(files, criteria) {
+        if (criteria && typeof criteria === 'object' && Array.isArray(criteria.steps)) {
+            return files.sort((a, b) => {
+                for (const { field, desc } of criteria.steps) {
+                    const va = a[field];
+                    const vb = b[field];
+                    let r;
+                    if (typeof va === 'string' || typeof vb === 'string') {
+                        r = String(va ?? '').localeCompare(String(vb ?? ''));
+                    } else {
+                        r = (va || 0) - (vb || 0);
+                    }
+                    if (r !== 0) return desc ? -r : r;
+                }
+                return 0;
+            });
+        }
         return files.sort((a, b) => {
-            switch (order) {
+            switch (criteria) {
                 case 'nameAsc': return a.name.localeCompare(b.name);
                 case 'nameDesc': return b.name.localeCompare(a.name);
                 case 'dateAsc': return a.lastModified - b.lastModified;

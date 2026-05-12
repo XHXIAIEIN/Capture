@@ -1,4 +1,4 @@
-import { CONSTANTS } from './utils.js';
+import { CONSTANTS, parseSortExpression, SORT_PRESET_TO_EXPRESSION } from './utils.js';
 import { FileImporter } from './importer.js';
 import { DragSort } from './dragSort.js';
 import { captureAll, createZipMainThread, downloadZip } from './capture.js';
@@ -9,6 +9,8 @@ const DOM_IDS = [
   'bgColor', 'photoWall', 'downloadMode', 'progressContainer', 'progressText',
   'photoWallContainer', 'linksContainer', 'imageBorderRadius', 'pageBorderRadius',
   'imageFormat', 'imageQuality', 'imageAlignment', 'addMoreHint', 'appendMode',
+  'sortExpression', 'sortExpressionHint', 'sortExpressionHelp',
+  'sortExpressionPopover', 'sortExpressionPopoverClose',
 ];
 
 function collectDOM() {
@@ -69,7 +71,7 @@ class App {
   }
 
   bindEvents() {
-    const { dropArea, fileInput, captureButton, sortOrder, photoWallContainer, addMoreHint, appendMode } = this.ui;
+    const { dropArea, fileInput, captureButton, sortOrder, photoWallContainer, addMoreHint, appendMode, sortExpression } = this.ui;
 
     const openPicker = () => {
       if (this.dragSort.isDragging) return;
@@ -95,15 +97,85 @@ class App {
     });
 
     captureButton.addEventListener('click', () => this.runCapture());
-    sortOrder.addEventListener('change', () => this.importer.resort(sortOrder.value));
+    sortOrder.addEventListener('change', () => {
+      const expr = SORT_PRESET_TO_EXPRESSION[sortOrder.value] || '';
+      sortExpression.value = expr;
+      this.handleSortExpressionChange();
+    });
     appendMode.addEventListener('change', () => this.updateDropAreaText());
+    sortExpression.addEventListener('input', () => this.handleSortExpressionChange());
+
+    this.bindPopover();
 
     for (const el of Object.values(this.ui)) {
       if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT')) {
-        if (el === fileInput || el === sortOrder || el === appendMode) continue;
+        if (el === fileInput || el === sortOrder || el === appendMode || el === sortExpression) continue;
         el.addEventListener('change', () => this.updateLayout());
       }
     }
+
+    if (!sortExpression.value.trim()) {
+      sortExpression.value = SORT_PRESET_TO_EXPRESSION[sortOrder.value] || 'name ASC';
+    }
+    this.updateSortExpressionState();
+  }
+
+  bindPopover() {
+    const { sortExpressionHelp, sortExpressionPopover, sortExpressionPopoverClose } = this.ui;
+    const hide = () => { sortExpressionPopover.hidden = true; };
+    sortExpressionHelp.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sortExpressionPopover.hidden = !sortExpressionPopover.hidden;
+    });
+    sortExpressionPopoverClose.addEventListener('click', hide);
+    sortExpressionPopover.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('click', (e) => {
+      if (sortExpressionPopover.hidden) return;
+      if (e.target === sortExpressionHelp) return;
+      hide();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hide();
+    });
+  }
+
+  resolveSortCriteria() {
+    const raw = this.ui.sortExpression.value.trim();
+    if (!raw) return this.ui.sortOrder.value;
+    const parsed = parseSortExpression(raw);
+    if (parsed.steps.length === 0) return this.ui.sortOrder.value;
+    return parsed;
+  }
+
+  updateSortExpressionState() {
+    const { sortExpression, sortExpressionHint } = this.ui;
+    const raw = sortExpression.value.trim();
+    sortExpressionHint.classList.remove('error');
+    if (!raw) {
+      sortExpressionHint.textContent = '使用上方下拉排序';
+      return;
+    }
+    const { steps, errors } = parseSortExpression(raw);
+    if (errors.length > 0) {
+      sortExpressionHint.classList.add('error');
+      sortExpressionHint.textContent = `未知字段: ${errors.join(', ')}`;
+    } else if (steps.length === 0) {
+      sortExpressionHint.classList.add('error');
+      sortExpressionHint.textContent = '表达式无效';
+    } else {
+      const desc = steps.map(({ field, desc: d }) => `${field} ${d ? 'DESC' : 'ASC'}`).join(' → ');
+      sortExpressionHint.textContent = `排序: ${desc}`;
+    }
+  }
+
+  handleSortExpressionChange() {
+    this.updateSortExpressionState();
+    if (this.importer.descriptors.length === 0) return;
+    this.applySort();
+  }
+
+  applySort() {
+    this.importer.resort(this.resolveSortCriteria());
   }
 
   bindDropZone(zone, forceAppend) {
@@ -127,13 +199,13 @@ class App {
   }
 
   handleFiles(fileList, isAppend) {
-    const { progressContainer, progressText, sortOrder, appendMode } = this.ui;
+    const { progressContainer, progressText, appendMode } = this.ui;
     progressContainer.style.display = 'block';
     progressText.innerText = isAppend ? '正在添加图片...' : '正在分析图片...';
     this.importer.handleFiles(fileList, {
       isAppend,
       appendMode: isAppend ? appendMode.value : 'append',
-      sortOrder: sortOrder.value,
+      sortOrder: this.resolveSortCriteria(),
     });
   }
 

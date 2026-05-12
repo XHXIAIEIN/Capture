@@ -117,6 +117,14 @@
                                 <option value="sort">按当前排序插入</option>
                             </select>
                         </label>
+                        <label class="span-full">
+                            <span class="label-row">
+                                <span>排序表达式 (上方下拉变化时自动同步):</span>
+                                <button type="button" id="sortExpressionHelp" class="hint-toggle" aria-label="查看字段字典">?</button>
+                            </span>
+                            <input type="text" id="sortExpression" placeholder="例：ORDER BY type ASC, size DESC, name">
+                            <small id="sortExpressionHint" class="hint-text"></small>
+                        </label>
                     </div>
                 </details>
             </div>
@@ -136,6 +144,29 @@
                 <span class="mode-hint"></span>
             </div>
         </div>
+    </div>
+    <div id="sortExpressionPopover" class="popover" hidden>
+        <button type="button" class="popover-close" id="sortExpressionPopoverClose" aria-label="关闭">×</button>
+        <h4>语法</h4>
+        <p><code>[ORDER BY] 字段 [ASC|DESC], ...</code></p>
+        <p>简写：<code>-字段</code> 等同 <code>字段 DESC</code></p>
+        <h4>示例</h4>
+        <ul>
+            <li><code>name</code></li>
+            <li><code>type, -size</code></li>
+            <li><code>ORDER BY aspect DESC, resolution ASC</code></li>
+        </ul>
+        <h4>字段</h4>
+        <table>
+            <tr><td><code>name</code></td><td>文件名</td></tr>
+            <tr><td><code>size</code></td><td>文件大小</td></tr>
+            <tr><td><code>type</code></td><td>MIME 类型</td></tr>
+            <tr><td><code>date</code> / <code>modified</code></td><td>最后修改时间</td></tr>
+            <tr><td><code>width</code> / <code>w</code></td><td>图像宽度</td></tr>
+            <tr><td><code>height</code> / <code>h</code></td><td>图像高度</td></tr>
+            <tr><td><code>aspect</code> / <code>ratio</code></td><td>宽高比</td></tr>
+            <tr><td><code>resolution</code> / <code>pixels</code></td><td>像素总数</td></tr>
+        </table>
     </div>
     <script type="module" src="src/app.js"></script>
 </body>
