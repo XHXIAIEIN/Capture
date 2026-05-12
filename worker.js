@@ -175,9 +175,9 @@ class WorkerImageProcessor {
         
         // Add images to zip
         for (let i = 0; i < imageDataArray.length; i++) {
-            const { data, index } = imageDataArray[i];
-            const fileName = `${(index + 1).toString().padStart(3, '0')}.${format}`;
-            zip.file(fileName, data, { base64: true });
+            const { data, fileName, index } = imageDataArray[i];
+            const name = fileName ?? `${(index + 1).toString().padStart(3, '0')}.${format}`;
+            zip.file(name, data, { base64: true });
             
             // Send progress update
             self.postMessage({

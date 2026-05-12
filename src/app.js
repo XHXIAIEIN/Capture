@@ -1,4 +1,4 @@
-import { CONSTANTS, parseSortExpression, SORT_PRESET_TO_EXPRESSION } from './utils.js';
+import { CONSTANTS, parseSortExpression, SORT_PRESET_TO_EXPRESSION, groupDescriptors } from './utils.js';
 import { FileImporter } from './importer.js';
 import { DragSort } from './dragSort.js';
 import { captureAll, createZipMainThread, downloadZip } from './capture.js';
@@ -9,7 +9,7 @@ const DOM_IDS = [
   'bgColor', 'photoWall', 'downloadMode', 'progressContainer', 'progressText',
   'photoWallContainer', 'linksContainer', 'imageBorderRadius', 'pageBorderRadius',
   'imageFormat', 'imageQuality', 'imageAlignment', 'addMoreHint', 'appendMode',
-  'sortExpression', 'sortExpressionHint', 'sortExpressionHelp',
+  'sortExpression', 'sortExpressionHint', 'sortExpressionHelp', 'groupBy',
   'sortExpressionPopover', 'sortExpressionPopoverClose', 'sortExpressionPopoverHeader',
 ];
 
@@ -71,7 +71,7 @@ class App {
   }
 
   bindEvents() {
-    const { dropArea, fileInput, captureButton, sortOrder, photoWallContainer, addMoreHint, appendMode, sortExpression } = this.ui;
+    const { dropArea, fileInput, captureButton, sortOrder, photoWallContainer, addMoreHint, appendMode, sortExpression, groupBy } = this.ui;
 
     const openPicker = () => {
       if (this.dragSort.isDragging) return;
@@ -104,12 +104,13 @@ class App {
     });
     appendMode.addEventListener('change', () => this.updateDropAreaText());
     sortExpression.addEventListener('input', () => this.handleSortExpressionChange());
+    groupBy.addEventListener('change', () => this.applySort());
 
     this.bindPopover();
 
     for (const el of Object.values(this.ui)) {
       if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT')) {
-        if (el === fileInput || el === sortOrder || el === appendMode || el === sortExpression) continue;
+        if (el === fileInput || el === sortOrder || el === appendMode || el === sortExpression || el === groupBy) continue;
         el.addEventListener('change', () => this.updateLayout());
       }
     }
@@ -209,7 +210,7 @@ class App {
   }
 
   applySort() {
-    this.importer.resort(this.resolveSortCriteria());
+    this.importer.resort(this.resolveSortCriteria(), this.ui.groupBy.value);
   }
 
   bindDropZone(zone, forceAppend) {
@@ -240,6 +241,7 @@ class App {
       isAppend,
       appendMode: isAppend ? appendMode.value : 'append',
       sortOrder: this.resolveSortCriteria(),
+      groupBy: this.ui.groupBy.value,
     });
   }
 
@@ -307,8 +309,11 @@ class App {
       p.style.borderRadius = `${s.imageBorderRadius}px`;
     }
 
-    const totalShots = Math.ceil(count / (s.columns * s.rows));
-    progressText.innerText = `文件夹包含 ${count} 个图片，预计生成 ${totalShots} 张截图`;
+    const perCapture = s.columns * s.rows;
+    const groups = this.buildCaptureGroups();
+    const totalShots = groups.reduce((sum, g) => sum + Math.ceil(g.elements.length / perCapture), 0);
+    const groupSuffix = groups.length > 1 ? `（${groups.length} 个分组）` : '';
+    progressText.innerText = `文件夹包含 ${count} 个图片，预计生成 ${totalShots} 张截图${groupSuffix}`;
     progressContainer.style.display = 'block';
   }
 
@@ -324,6 +329,19 @@ class App {
       dropArea.textContent = '点击此处，导入文件夹';
       addMoreHint.style.display = 'none';
     }
+  }
+
+  buildCaptureGroups() {
+    const groupBy = this.ui.groupBy.value;
+    const descs = this.importer.descriptors;
+    if (!groupBy || groupBy === 'none') {
+      return [{ key: null, elements: descs.map((d) => d.element).filter(Boolean) }];
+    }
+    const grouped = groupDescriptors(descs, groupBy);
+    return grouped.map(({ key, items }) => ({
+      key,
+      elements: items.map((d) => d.element).filter(Boolean),
+    })).filter((g) => g.elements.length > 0);
   }
 
   async runCapture() {
@@ -343,28 +361,42 @@ class App {
     const format = imageFormat.value;
     const quality = parseInt(imageQuality.value, 10) / 100;
     const mode = downloadMode.value;
+    const groups = this.buildCaptureGroups(photos);
+    const perCapture = settings.columns * settings.rows;
+    const totalShots = groups.reduce((sum, g) => sum + Math.ceil(g.elements.length / perCapture), 0);
 
     try {
-      const results = await captureAll({
-        photos,
-        settings,
-        format,
-        quality,
-        mode,
-        linksContainer: mode === 'browser' ? linksContainer : null,
-        onProgress: (ratio) => {
-          const pct = Math.round(ratio * 100);
-          progressText.innerText = `正在截图... ${pct}%`;
-        },
-      });
+      let completedShots = 0;
+      const allResults = [];
+      let directoryHandle = null;
+      for (const g of groups) {
+        const groupShots = Math.ceil(g.elements.length / perCapture);
+        const { results, directoryHandle: handleOut } = await captureAll({
+          photos: g.elements,
+          settings,
+          format,
+          quality,
+          mode,
+          linksContainer: mode === 'browser' ? linksContainer : null,
+          fileNamePrefix: g.key ?? '',
+          directoryHandle,
+          onProgress: (ratio) => {
+            const overall = totalShots === 0 ? 1 : (completedShots + ratio * groupShots) / totalShots;
+            progressText.innerText = `正在截图... ${Math.round(overall * 100)}%`;
+          },
+        });
+        directoryHandle = handleOut;
+        completedShots += groupShots;
+        allResults.push(...results);
+      }
 
       if (mode === 'zip') {
         progressText.innerText = '正在生成压缩包...';
         if (this.importer.worker) {
-          const { content, fileName } = await this.importer.createZipInWorker(results, format);
+          const { content, fileName } = await this.importer.createZipInWorker(allResults, format);
           saveAs(content, fileName);
         } else {
-          const blob = await createZipMainThread(results, format);
+          const blob = await createZipMainThread(allResults, format);
           downloadZip(blob);
         }
         progressText.innerText = '完成';

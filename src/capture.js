@@ -34,11 +34,12 @@ export async function captureChunk(photos, settings, format, quality) {
   }
 }
 
-function makeFileName(index, format) {
-  return `${String(index + 1).padStart(3, '0')}.${format}`;
+function makeFileName(index, format, prefix = '') {
+  const stem = `${String(index + 1).padStart(3, '0')}.${format}`;
+  return prefix ? `${prefix}-${stem}` : stem;
 }
 
-export async function captureAll({ photos, settings, format, quality, mode, onProgress, linksContainer }) {
+export async function captureAll({ photos, settings, format, quality, mode, onProgress, linksContainer, fileNamePrefix = '', directoryHandle: providedHandle = null }) {
   const perCapture = settings.columns * settings.rows;
   const totalShots = Math.ceil(photos.length / perCapture);
   const chunkSize = CONSTANTS.CHUNK_SIZE_CAPTURE;
@@ -50,8 +51,8 @@ export async function captureAll({ photos, settings, format, quality, mode, onPr
     tasks.push({ shot, slice });
   }
 
-  let directoryHandle = null;
-  if (mode === 'folder') {
+  let directoryHandle = providedHandle;
+  if (mode === 'folder' && !directoryHandle) {
     if (!('showDirectoryPicker' in window)) {
       throw new Error('您的浏览器不支持文件夹保存');
     }
@@ -63,7 +64,7 @@ export async function captureAll({ photos, settings, format, quality, mode, onPr
     const batch = tasks.slice(i, i + chunkSize);
     await Promise.all(batch.map(async ({ shot, slice }) => {
       const base64 = await captureChunk(slice, settings, format, quality);
-      const fileName = makeFileName(shot, format);
+      const fileName = makeFileName(shot, format, fileNamePrefix);
 
       if (mode === 'folder') {
         const blob = base64ToBlob(base64, `image/${format}`);
@@ -78,20 +79,21 @@ export async function captureAll({ photos, settings, format, quality, mode, onPr
           linksContainer.appendChild(createDownloadLink(base64, fileName, format));
         }
       } else if (mode === 'zip') {
-        results.push({ data: base64, index: shot });
+        results.push({ data: base64, index: shot, fileName });
       }
     }));
     done += batch.length;
     onProgress?.(done / tasks.length);
   }
 
-  return results;
+  return { results, directoryHandle };
 }
 
 export async function createZipMainThread(imageDataArray, format) {
   const zip = new JSZip();
-  for (const { data, index } of imageDataArray) {
-    zip.file(makeFileName(index, format), data, { base64: true });
+  for (let i = 0; i < imageDataArray.length; i++) {
+    const { data, fileName, index } = imageDataArray[i];
+    zip.file(fileName ?? makeFileName(index ?? i, format), data, { base64: true });
   }
   return await zip.generateAsync({
     type: 'blob',

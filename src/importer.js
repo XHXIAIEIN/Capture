@@ -1,4 +1,9 @@
-import { CONSTANTS, loadImage, sortFiles, formatDate, deriveFilenameParts, deriveOrientation } from './utils.js';
+import { CONSTANTS, loadImage, sortFiles, formatDate, deriveFilenameParts, deriveOrientation, groupDescriptors, flattenGroups } from './utils.js';
+
+function applyGrouping(descs, groupBy) {
+  if (!groupBy || groupBy === 'none') return descs;
+  return flattenGroups(groupDescriptors(descs, groupBy));
+}
 
 async function buildFileDescriptor(file) {
   const img = await loadImage(file);
@@ -129,7 +134,7 @@ export class FileImporter {
     }
   }
 
-  async handleFiles(fileList, { isAppend, appendMode, sortOrder }) {
+  async handleFiles(fileList, { isAppend, appendMode, sortOrder, groupBy }) {
     const images = [...fileList].filter((f) => f.type.startsWith('image/'));
     if (images.length === 0) {
       this.onComplete?.({ added: 0, total: this.descriptors.length, empty: true });
@@ -153,12 +158,13 @@ export class FileImporter {
       this._pendingAppend = isAppend;
       this._pendingAppendMode = appendMode;
       this._pendingAddedCount = images.length;
+      this._pendingGroupBy = groupBy;
     } else {
-      await this.handleFilesMainThread(images, { isAppend, appendMode, sortOrder });
+      await this.handleFilesMainThread(images, { isAppend, appendMode, sortOrder, groupBy });
     }
   }
 
-  async handleFilesMainThread(images, { isAppend, appendMode, sortOrder }) {
+  async handleFilesMainThread(images, { isAppend, appendMode, sortOrder, groupBy }) {
     const newDescs = [];
     for (let i = 0; i < images.length; i++) {
       try {
@@ -172,15 +178,15 @@ export class FileImporter {
     let finalDescs;
     let renderAppendOnly = false;
     if (isAppend && this.descriptors.length > 0) {
-      if (appendMode === 'append') {
+      if (appendMode === 'append' && (!groupBy || groupBy === 'none')) {
         const sortedNew = sortFiles(newDescs, sortOrder);
         finalDescs = [...this.descriptors, ...sortedNew];
         renderAppendOnly = true;
       } else {
-        finalDescs = sortFiles([...this.descriptors, ...newDescs], sortOrder);
+        finalDescs = applyGrouping(sortFiles([...this.descriptors, ...newDescs], sortOrder), groupBy);
       }
     } else {
-      finalDescs = sortFiles(newDescs, sortOrder);
+      finalDescs = applyGrouping(sortFiles(newDescs, sortOrder), groupBy);
     }
 
     if (renderAppendOnly) {
@@ -212,10 +218,12 @@ export class FileImporter {
         this.onProgress?.(msg.percentage / 100, msg.phase, msg);
         break;
       case 'filesProcessed': {
-        const finalDescs = msg.data;
+        const sorted = msg.data;
         const wasAppend = msg.isAppend;
-        const appendOnly = wasAppend && this._pendingAppendMode === 'append';
+        const groupBy = this._pendingGroupBy;
+        const appendOnly = wasAppend && this._pendingAppendMode === 'append' && (!groupBy || groupBy === 'none');
         const previousCount = this.descriptors.length;
+        const finalDescs = appendOnly ? sorted : applyGrouping(sorted, groupBy);
         this.descriptors = finalDescs;
         if (appendOnly) {
           this.renderChunked(finalDescs.slice(previousCount), true)
@@ -226,11 +234,13 @@ export class FileImporter {
         }
         break;
       }
-      case 'filesSorted':
-        this.descriptors = msg.data;
-        this.renderChunked(msg.data, false)
+      case 'filesSorted': {
+        const grouped = applyGrouping(msg.data, this._pendingGroupBy);
+        this.descriptors = grouped;
+        this.renderChunked(grouped, false)
           .then(() => this.onComplete?.({ added: 0, total: this.descriptors.length, sortedOnly: true }));
         break;
+      }
       case 'error':
         console.error(`Worker error (${msg.phase}):`, msg.error);
         this.onComplete?.({ error: msg.error });
@@ -238,8 +248,9 @@ export class FileImporter {
     }
   }
 
-  resort(order) {
+  resort(order, groupBy) {
     if (this.descriptors.length === 0) return;
+    this._pendingGroupBy = groupBy;
     if (this.worker) {
       this.worker.postMessage({
         type: 'sortFiles',
@@ -249,7 +260,7 @@ export class FileImporter {
         },
       });
     } else {
-      this.descriptors = sortFiles(this.descriptors, order);
+      this.descriptors = applyGrouping(sortFiles(this.descriptors, order), groupBy);
       this.renderChunked(this.descriptors, false)
         .then(() => this.onComplete?.({ added: 0, total: this.descriptors.length, sortedOnly: true }));
     }

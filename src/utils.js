@@ -181,3 +181,64 @@ export function sortFiles(files, criteria) {
   }
   return [...files].sort((a, b) => compareBySteps(a, b, steps));
 }
+
+const ORIENTATION_LABEL = { '-1': 'portrait', '0': 'square', '1': 'landscape' };
+const ORIENTATION_ORDER = { landscape: 0, square: 1, portrait: 2 };
+
+function aspectBand(r) {
+  if (!r) return 'unknown';
+  if (r >= 2) return 'ultrawide';
+  if (r >= 1.2) return 'landscape';
+  if (r > 0.83) return 'square';
+  if (r > 0.5) return 'portrait';
+  return 'ultratall';
+}
+const ASPECT_ORDER = { ultrawide: 0, landscape: 1, square: 2, portrait: 3, ultratall: 4, unknown: 5 };
+
+export const GROUP_OPTIONS = {
+  none: {
+    label: '无分组',
+    key: null,
+  },
+  orientation: {
+    label: '方向',
+    key: (d) => ORIENTATION_LABEL[String(d.orientation ?? 0)] ?? 'square',
+    order: (k) => ORIENTATION_ORDER[k] ?? 99,
+  },
+  ext: {
+    label: '扩展名',
+    key: (d) => (d.ext || 'unknown').toLowerCase(),
+    order: (k) => k,
+  },
+  aspect: {
+    label: '宽高比',
+    key: (d) => aspectBand(d.aspectRatio),
+    order: (k) => ASPECT_ORDER[k] ?? 99,
+  },
+};
+
+export function groupDescriptors(descs, groupBy) {
+  const opt = GROUP_OPTIONS[groupBy];
+  if (!opt || !opt.key) return [{ key: null, items: [...descs] }];
+  const buckets = new Map();
+  for (const d of descs) {
+    const k = opt.key(d);
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(d);
+  }
+  const orderFn = opt.order ?? ((k) => k);
+  return [...buckets.entries()]
+    .map(([key, items]) => ({ key, items }))
+    .sort((a, b) => {
+      const oa = orderFn(a.key);
+      const ob = orderFn(b.key);
+      if (typeof oa === 'number' && typeof ob === 'number') return oa - ob;
+      return String(oa).localeCompare(String(ob), undefined, NATURAL);
+    });
+}
+
+export function flattenGroups(groups) {
+  const out = [];
+  for (const g of groups) out.push(...g.items);
+  return out;
+}
