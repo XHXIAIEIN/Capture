@@ -57,9 +57,8 @@ function readDescriptorFromElement(el) {
 }
 
 export class FileImporter {
-  constructor({ photoWall, addMoreHint, onDragStart, onProgress, onComplete }) {
+  constructor({ photoWall, onDragStart, onProgress, onComplete }) {
     this.photoWall = photoWall;
-    this.addMoreHint = addMoreHint;
     this.onDragStart = onDragStart;
     this.onProgress = onProgress;
     this.onComplete = onComplete;
@@ -90,11 +89,7 @@ export class FileImporter {
   }
 
   insertElement(el) {
-    if (this.addMoreHint && this.photoWall.contains(this.addMoreHint)) {
-      this.photoWall.insertBefore(el, this.addMoreHint);
-    } else {
-      this.photoWall.appendChild(el);
-    }
+    this.photoWall.appendChild(el);
   }
 
   clearDom() {

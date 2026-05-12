@@ -48,7 +48,6 @@ class App {
 
     this.importer = new FileImporter({
       photoWall: this.ui.photoWall,
-      addMoreHint: this.ui.addMoreHint,
       onDragStart: (el) => this.dragSort.attach(el),
       onProgress: (ratio, phase) => this.handleImportProgress(ratio, phase),
       onComplete: (info) => this.handleImportComplete(info),
@@ -163,7 +162,7 @@ class App {
       : '导入完成';
 
     if (this.importer.descriptors.length > 0) {
-      photoWallContainer.style.display = 'flex';
+      photoWallContainer.style.display = 'block';
       captureButton.style.display = 'block';
     }
     this.updateDropAreaText();
@@ -212,9 +211,9 @@ class App {
     const count = this.importer.descriptors.length;
     if (count > 0) {
       dropArea.textContent = '添加更多图片';
-      addMoreHint.style.display = 'block';
-      const modeText = appendMode.value === 'append' ? '添加到末尾' : '按排序插入';
-      addMoreHint.querySelector('p').textContent = `点击此处或拖拽文件到这里（${modeText}）`;
+      addMoreHint.style.display = 'flex';
+      const modeText = appendMode.value === 'append' ? '添加到末尾' : '按当前排序插入';
+      addMoreHint.querySelector('.mode-hint').textContent = `（${modeText}）`;
     } else {
       dropArea.textContent = '点击此处，导入文件夹';
       addMoreHint.style.display = 'none';

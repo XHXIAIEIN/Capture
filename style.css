@@ -117,36 +117,36 @@ summary {
 }
 
 .add-more-hint {
-    display: flex;
-    align-items: center;
+    display: none;
+    align-items: baseline;
     justify-content: center;
-    width: 100%;
-    aspect-ratio: 1;
-    align-self: stretch;
-    justify-self: stretch;
-    background: #fff;
-    color: #bbb;
+    gap: 8px;
+    width: 80%;
+    max-width: 600px;
+    margin: 16px auto 0;
+    padding: 14px 20px;
+    border: 2px dashed #ccc;
     border-radius: 8px;
+    color: #999;
+    text-align: center;
     cursor: pointer;
-    transition: color 0.15s, background-color 0.15s;
+    transition: border-color 0.2s, color 0.2s;
     box-sizing: border-box;
-}
-
-.add-more-hint::before {
-    content: '+';
-    font-size: 36px;
-    font-weight: 200;
-    line-height: 1;
+    font-size: 14px;
 }
 
 .add-more-hint:hover {
-    color: #0056b3;
-    background: #f5f5f5;
+    border-color: #6c757d;
+    color: #495057;
 }
 
-.add-more-hint .main-text,
-.add-more-hint p {
-    display: none;
+.add-more-hint .main-text {
+    font-weight: 500;
+}
+
+.add-more-hint .mode-hint {
+    font-size: 12px;
+    opacity: 0.75;
 }
 
 #photoWall {
