@@ -106,8 +106,7 @@ export function parseSortExpression(expr) {
   const steps = [];
   const errors = [];
   if (!expr || typeof expr !== 'string') return { steps, errors };
-  const body = expr.trim().replace(/^order\s+by\s+/i, '');
-  for (const raw of body.split(/[,;]+/)) {
+  for (const raw of expr.split(/[,;]+/)) {
     let token = raw.trim();
     if (!token) continue;
     let desc = false;
