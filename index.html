@@ -69,8 +69,8 @@
 							<optgroup label="更多">
 								<option value="sizeAsc">大小 (更小优先)</option>
 								<option value="sizeDesc">大小 (更大优先)</option>
-								<option value="typeAsc">类型 (A-Z)</option>
-								<option value="typeDesc">类型 (Z-A)</option>
+								<option value="extAsc">扩展名 (A-Z)</option>
+								<option value="extDesc">扩展名 (Z-A)</option>
 							</optgroup>
 							<optgroup label="图像">
 								<option value="widthAsc">宽度 (更小优先)</option>
@@ -164,7 +164,7 @@
 									<span>排序表达式:</span>
 									<button type="button" id="sortExpressionHelp" class="hint-toggle" aria-label="查看字段字典">?</button>
 								</span>
-								<input type="text" id="sortExpression" placeholder="例：type ASC, size DESC, name" />
+								<input type="text" id="sortExpression" placeholder="例：ext ASC, size DESC, name" />
 								<small id="sortExpressionHint" class="hint-text"></small>
 							</label>
 						</div>
@@ -199,22 +199,26 @@
 			<h4>示例</h4>
 			<ul>
 				<li><code>name</code></li>
-				<li><code>type, -size</code></li>
+				<li><code>ext, -size</code></li>
 				<li><code>aspect DESC, resolution ASC</code></li>
 			</ul>
 			<h4>字段</h4>
 			<table>
 				<tr>
 					<td><code>name</code></td>
-					<td>文件名</td>
+					<td>文件名 (不含扩展名)</td>
+				</tr>
+				<tr>
+					<td>
+						<code>ext</code>
+						/
+						<code>extension</code>
+					</td>
+					<td>文件扩展名</td>
 				</tr>
 				<tr>
 					<td><code>size</code></td>
 					<td>文件大小</td>
-				</tr>
-				<tr>
-					<td><code>type</code></td>
-					<td>MIME 类型</td>
 				</tr>
 				<tr>
 					<td>
@@ -255,6 +259,22 @@
 						<code>pixels</code>
 					</td>
 					<td>像素总数</td>
+				</tr>
+				<tr>
+					<td>
+						<code>orientation</code>
+						/
+						<code>orient</code>
+					</td>
+					<td>方向 (竖 &lt; 方 &lt; 横)</td>
+				</tr>
+				<tr>
+					<td>
+						<code>random</code>
+						/
+						<code>shuffle</code>
+					</td>
+					<td>每次随机洗牌</td>
 				</tr>
 			</table>
 			</div>

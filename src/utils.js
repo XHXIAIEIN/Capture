@@ -53,23 +53,40 @@ export function createDownloadLink(base64Data, fileName, format) {
   return link;
 }
 
+const NATURAL = { numeric: true };
+const natCmp = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), undefined, NATURAL);
+const numCmp = (a, b) => (a || 0) - (b || 0);
+
+export function deriveFilenameParts(filename) {
+  const s = String(filename ?? '');
+  const i = s.lastIndexOf('.');
+  if (i <= 0) return { ext: '', basename: s };
+  return { ext: s.slice(i + 1).toLowerCase(), basename: s.slice(0, i) };
+}
+
+export function deriveOrientation(width, height) {
+  if (width > height) return 1;
+  if (width < height) return -1;
+  return 0;
+}
+
 const SORT_COMPARATORS = {
-  nameAsc: (a, b) => a.name.localeCompare(b.name),
-  nameDesc: (a, b) => b.name.localeCompare(a.name),
-  dateAsc: (a, b) => a.lastModified - b.lastModified,
-  dateDesc: (a, b) => b.lastModified - a.lastModified,
-  sizeAsc: (a, b) => a.size - b.size,
-  sizeDesc: (a, b) => b.size - a.size,
-  typeAsc: (a, b) => a.type.localeCompare(b.type),
-  typeDesc: (a, b) => b.type.localeCompare(a.type),
-  widthAsc: (a, b) => (a.width || 0) - (b.width || 0),
-  widthDesc: (a, b) => (b.width || 0) - (a.width || 0),
-  heightAsc: (a, b) => (a.height || 0) - (b.height || 0),
-  heightDesc: (a, b) => (b.height || 0) - (a.height || 0),
-  aspectRatioAsc: (a, b) => (a.aspectRatio || 0) - (b.aspectRatio || 0),
-  aspectRatioDesc: (a, b) => (b.aspectRatio || 0) - (a.aspectRatio || 0),
-  resolutionAsc: (a, b) => (a.resolution || (a.width * a.height)) - (b.resolution || (b.width * b.height)),
-  resolutionDesc: (a, b) => (b.resolution || (b.width * b.height)) - (a.resolution || (a.width * a.height)),
+  nameAsc: (a, b) => natCmp(a.basename ?? a.name, b.basename ?? b.name),
+  nameDesc: (a, b) => natCmp(b.basename ?? b.name, a.basename ?? a.name),
+  dateAsc: (a, b) => numCmp(a.lastModified, b.lastModified),
+  dateDesc: (a, b) => numCmp(b.lastModified, a.lastModified),
+  sizeAsc: (a, b) => numCmp(a.size, b.size),
+  sizeDesc: (a, b) => numCmp(b.size, a.size),
+  extAsc: (a, b) => natCmp(a.ext, b.ext),
+  extDesc: (a, b) => natCmp(b.ext, a.ext),
+  widthAsc: (a, b) => numCmp(a.width, b.width),
+  widthDesc: (a, b) => numCmp(b.width, a.width),
+  heightAsc: (a, b) => numCmp(a.height, b.height),
+  heightDesc: (a, b) => numCmp(b.height, a.height),
+  aspectRatioAsc: (a, b) => numCmp(a.aspectRatio, b.aspectRatio),
+  aspectRatioDesc: (a, b) => numCmp(b.aspectRatio, a.aspectRatio),
+  resolutionAsc: (a, b) => numCmp(a.resolution, b.resolution),
+  resolutionDesc: (a, b) => numCmp(b.resolution, a.resolution),
 };
 
 export const SORT_PRESET_TO_EXPRESSION = {
@@ -79,8 +96,8 @@ export const SORT_PRESET_TO_EXPRESSION = {
   dateDesc: 'date DESC',
   sizeAsc: 'size ASC',
   sizeDesc: 'size DESC',
-  typeAsc: 'type ASC',
-  typeDesc: 'type DESC',
+  extAsc: 'ext ASC',
+  extDesc: 'ext DESC',
   widthAsc: 'width ASC',
   widthDesc: 'width DESC',
   heightAsc: 'height ASC',
@@ -92,14 +109,16 @@ export const SORT_PRESET_TO_EXPRESSION = {
 };
 
 export const SORT_FIELD_ALIASES = {
-  name: 'name',
+  name: 'basename', basename: 'basename',
   size: 'size',
-  type: 'type',
+  ext: 'ext', extension: 'ext',
   date: 'lastModified', modified: 'lastModified', lastmodified: 'lastModified',
   width: 'width', w: 'width',
   height: 'height', h: 'height',
   aspect: 'aspectRatio', aspectratio: 'aspectRatio', ratio: 'aspectRatio',
   resolution: 'resolution', pixels: 'resolution', res: 'resolution',
+  orientation: 'orientation', orient: 'orientation',
+  random: 'random', shuffle: 'random', rand: 'random',
 };
 
 export function parseSortExpression(expr) {
@@ -134,13 +153,17 @@ export function parseSortExpression(expr) {
 
 function compareBySteps(a, b, steps) {
   for (const { field, desc } of steps) {
-    const va = a[field];
-    const vb = b[field];
     let r;
-    if (typeof va === 'string' || typeof vb === 'string') {
-      r = String(va ?? '').localeCompare(String(vb ?? ''));
+    if (field === 'random') {
+      r = numCmp(a._rand, b._rand);
     } else {
-      r = (va || 0) - (vb || 0);
+      const va = a[field];
+      const vb = b[field];
+      if (typeof va === 'string' || typeof vb === 'string') {
+        r = natCmp(va, vb);
+      } else {
+        r = numCmp(va, vb);
+      }
     }
     if (r !== 0) return desc ? -r : r;
   }
@@ -153,5 +176,8 @@ export function sortFiles(files, criteria) {
   }
   const steps = Array.isArray(criteria?.steps) ? criteria.steps : [];
   if (steps.length === 0) return [...files];
+  if (steps.some((s) => s.field === 'random')) {
+    for (const item of files) item._rand = Math.random();
+  }
   return [...files].sort((a, b) => compareBySteps(a, b, steps));
 }

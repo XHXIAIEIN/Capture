@@ -1,11 +1,14 @@
-import { CONSTANTS, loadImage, sortFiles, formatDate } from './utils.js';
+import { CONSTANTS, loadImage, sortFiles, formatDate, deriveFilenameParts, deriveOrientation } from './utils.js';
 
 async function buildFileDescriptor(file) {
   const img = await loadImage(file);
   const width = img.naturalWidth;
   const height = img.naturalHeight;
+  const { ext, basename } = deriveFilenameParts(file.name);
   return {
     name: file.name,
+    basename,
+    ext,
     size: file.size,
     type: file.type,
     lastModified: file.lastModified,
@@ -13,6 +16,7 @@ async function buildFileDescriptor(file) {
     height,
     aspectRatio: parseFloat((width / height).toFixed(2)),
     resolution: width * height,
+    orientation: deriveOrientation(width, height),
     file,
   };
 }
@@ -29,6 +33,8 @@ export function buildPhotoElement(desc, onDragStart) {
   const container = document.createElement('div');
   container.className = 'photo-container';
   container.dataset.name = desc.name;
+  container.dataset.basename = desc.basename ?? desc.name;
+  container.dataset.ext = desc.ext ?? '';
   container.dataset.size = String(desc.size);
   container.dataset.type = desc.type;
   container.dataset.lastModified = String(desc.lastModified);
@@ -36,6 +42,7 @@ export function buildPhotoElement(desc, onDragStart) {
   container.dataset.height = String(desc.height);
   container.dataset.aspectRatio = String(desc.aspectRatio);
   container.dataset.resolution = String(desc.resolution);
+  container.dataset.orientation = String(desc.orientation ?? 0);
   container.appendChild(img);
 
   if (onDragStart) onDragStart(container);
@@ -45,6 +52,8 @@ export function buildPhotoElement(desc, onDragStart) {
 function readDescriptorFromElement(el) {
   return {
     name: el.dataset.name,
+    basename: el.dataset.basename ?? el.dataset.name,
+    ext: el.dataset.ext ?? '',
     size: parseInt(el.dataset.size, 10),
     type: el.dataset.type,
     lastModified: parseInt(el.dataset.lastModified, 10),
@@ -52,6 +61,7 @@ function readDescriptorFromElement(el) {
     height: parseInt(el.dataset.height, 10),
     aspectRatio: parseFloat(el.dataset.aspectRatio),
     resolution: parseInt(el.dataset.resolution, 10),
+    orientation: parseInt(el.dataset.orientation ?? '0', 10),
     element: el,
   };
 }
