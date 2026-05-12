@@ -1,4 +1,4 @@
-import { CONSTANTS, parseSortExpression, SORT_PRESET_TO_EXPRESSION, groupDescriptors } from './utils.js';
+import { CONSTANTS, parseSortExpression, SORT_PRESET_TO_EXPRESSION, groupDescriptors, groupKeyLabel } from './utils.js';
 import { FileImporter } from './importer.js';
 import { DragSort } from './dragSort.js';
 import { captureAll, createZipMainThread, downloadZip } from './capture.js';
@@ -9,7 +9,7 @@ const DOM_IDS = [
   'bgColor', 'photoWall', 'downloadMode', 'progressContainer', 'progressText',
   'photoWallContainer', 'linksContainer', 'imageBorderRadius', 'pageBorderRadius',
   'imageFormat', 'imageQuality', 'imageAlignment', 'addMoreHint', 'appendMode',
-  'sortExpression', 'sortExpressionHint', 'sortExpressionHelp', 'groupBy', 'groupByTabs',
+  'sortExpression', 'sortExpressionHint', 'sortExpressionHelp', 'groupBy', 'groupTabs',
   'sortExpressionPopover', 'sortExpressionPopoverClose', 'sortExpressionPopoverHeader',
 ];
 
@@ -105,7 +105,7 @@ class App {
     appendMode.addEventListener('change', () => this.updateDropAreaText());
     sortExpression.addEventListener('input', () => this.handleSortExpressionChange());
     groupBy.addEventListener('change', () => this.applySort());
-    this.bindGroupByTabs();
+    this.bindGroupTabs();
 
     this.bindPopover();
 
@@ -122,22 +122,80 @@ class App {
     this.updateSortExpressionState();
   }
 
-  bindGroupByTabs() {
-    const { groupByTabs, groupBy } = this.ui;
-    if (!groupByTabs) return;
-    groupByTabs.addEventListener('click', (e) => {
+  bindGroupTabs() {
+    const { groupTabs } = this.ui;
+    if (!groupTabs) return;
+    groupTabs.addEventListener('click', (e) => {
       const tab = e.target.closest('.tab');
-      if (!tab || !groupByTabs.contains(tab)) return;
-      const value = tab.dataset.value;
-      if (groupBy.value === value) return;
-      for (const t of groupByTabs.querySelectorAll('.tab')) {
-        const active = t === tab;
-        t.classList.toggle('active', active);
-        t.setAttribute('aria-selected', active ? 'true' : 'false');
-      }
-      groupBy.value = value;
-      groupBy.dispatchEvent(new Event('change'));
+      if (!tab || !groupTabs.contains(tab)) return;
+      this.setActiveGroup(tab.dataset.key);
     });
+  }
+
+  updateGroupTabs() {
+    const { groupTabs, photoWall } = this.ui;
+    if (!groupTabs) return;
+    const groupBy = this.ui.groupBy.value;
+    const groups = this.buildCaptureGroups();
+
+    for (const g of groups) {
+      for (const el of g.elements) el.dataset.groupKey = g.key ?? '';
+    }
+
+    if (!groupBy || groupBy === 'none' || groups.length <= 1) {
+      groupTabs.style.display = 'none';
+      groupTabs.innerHTML = '';
+      delete photoWall.dataset.activeGroup;
+      for (const el of photoWall.querySelectorAll('.photo-container')) {
+        el.style.removeProperty('display');
+      }
+      this._activeGroupKey = '__all__';
+      return;
+    }
+
+    groupTabs.style.display = 'flex';
+    groupTabs.innerHTML = '';
+    const total = groups.reduce((s, g) => s + g.elements.length, 0);
+    const previousKey = this._activeGroupKey;
+    const validKeys = new Set(groups.map((g) => g.key));
+    const keepActive = previousKey === '__all__' || validKeys.has(previousKey);
+    const initialKey = keepActive ? previousKey : '__all__';
+
+    const allBtn = this._buildTabButton('__all__', `全部 (${total})`);
+    groupTabs.appendChild(allBtn);
+    for (const g of groups) {
+      groupTabs.appendChild(this._buildTabButton(g.key, `${groupKeyLabel(groupBy, g.key)} (${g.elements.length})`));
+    }
+
+    this.setActiveGroup(initialKey);
+  }
+
+  _buildTabButton(key, label) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tab';
+    btn.dataset.key = key;
+    btn.textContent = label;
+    return btn;
+  }
+
+  setActiveGroup(key) {
+    const { groupTabs, photoWall } = this.ui;
+    if (!groupTabs) return;
+    this._activeGroupKey = key;
+    for (const t of groupTabs.querySelectorAll('.tab')) {
+      t.classList.toggle('active', t.dataset.key === key);
+    }
+    photoWall.dataset.activeGroup = key;
+    if (key === '__all__') {
+      for (const el of photoWall.querySelectorAll('.photo-container')) {
+        el.style.removeProperty('display');
+      }
+    } else {
+      for (const el of photoWall.querySelectorAll('.photo-container')) {
+        el.style.display = el.dataset.groupKey === key ? '' : 'none';
+      }
+    }
   }
 
   bindPopover() {
@@ -294,6 +352,7 @@ class App {
     }
     this.updateDropAreaText();
     this.updateLayout();
+    this.updateGroupTabs();
   }
 
   updateLayout() {

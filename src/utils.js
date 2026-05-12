@@ -242,3 +242,15 @@ export function flattenGroups(groups) {
   for (const g of groups) out.push(...g.items);
   return out;
 }
+
+const GROUP_KEY_LABELS = {
+  orientation: { landscape: '横图', portrait: '竖图', square: '方图' },
+  aspect: {
+    ultrawide: '超宽', landscape: '横向', square: '方形', portrait: '竖向', ultratall: '超竖',
+  },
+};
+
+export function groupKeyLabel(groupBy, key) {
+  if (key == null) return '全部';
+  return GROUP_KEY_LABELS[groupBy]?.[key] ?? String(key);
+}

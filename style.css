@@ -114,6 +114,12 @@ a:hover {
     color: #fff;
 }
 
+.group-tabs {
+    margin: 0 auto 12px;
+    justify-content: center;
+    max-width: 100%;
+}
+
 .hint-text {
     margin-top: 4px;
     font-size: 12px;

@@ -15,7 +15,11 @@ function buildCaptureNode(photos, settings) {
     left: '-99999px',
     top: '0',
   });
-  for (const photo of photos) node.appendChild(photo.cloneNode(true));
+  for (const photo of photos) {
+    const clone = photo.cloneNode(true);
+    clone.style.removeProperty('display');
+    node.appendChild(clone);
+  }
   return node;
 }
 
