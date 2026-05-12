@@ -31,30 +31,20 @@ class WorkerUtils {
     }
 
     static async getImageDimensions(file) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                const width = img.naturalWidth;
-                const height = img.naturalHeight;
-                const aspectRatio = parseFloat((width / height).toFixed(2));
-                const resolution = width * height;
-                
-                resolve({
-                    width,
-                    height,
-                    aspectRatio,
-                    resolution
-                });
-                
-                // Clean up
-                URL.revokeObjectURL(img.src);
+        // Workers don't have `Image`, but they do have `createImageBitmap`.
+        const bitmap = await createImageBitmap(file);
+        try {
+            const width = bitmap.width;
+            const height = bitmap.height;
+            return {
+                width,
+                height,
+                aspectRatio: parseFloat((width / height).toFixed(2)),
+                resolution: width * height,
             };
-            img.onerror = () => {
-                URL.revokeObjectURL(img.src);
-                reject(new Error('Failed to load image'));
-            };
-            img.src = URL.createObjectURL(file);
-        });
+        } finally {
+            bitmap.close?.();
+        }
     }
 }
 

@@ -1,6 +1,5 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -8,8 +7,8 @@ body {
     padding: 20px;
     background-color: #f5f5f5;
     color: #333;
-    min-height: 120vh;
-    text-align: -webkit-center;
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
 h1 {
@@ -46,6 +45,7 @@ a:hover {
     color: #ccc;
     cursor: pointer;
     transition: border-color 0.3s, color 0.3s;
+    box-sizing: border-box;
 }
 
 #dropArea.hover {
@@ -53,7 +53,8 @@ a:hover {
     color: #495057;
 }
 
-#configPanel, #progressContainer {
+#configPanel,
+#progressContainer {
     width: 90%;
     max-width: 600px;
     display: flex;
@@ -63,7 +64,8 @@ a:hover {
     text-align: left;
     background-color: #ffffff;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
 }
 
 .configGroup {
@@ -84,7 +86,7 @@ details {
 
 summary {
     font-size: 16px;
-    padding: 10px 0 10px;
+    padding: 10px 0;
     font-weight: bold;
     cursor: pointer;
 }
@@ -93,13 +95,11 @@ summary {
     padding-top: 10px;
 }
 
-#configAdvanced{
+#configAdvanced {
     margin-top: 10px;
 }
 
 #progressContainer {
-    width: 100%;
-    max-width: 600px;
     margin: 10px 0;
     display: none;
 }
@@ -107,13 +107,8 @@ summary {
 #photoWallContainer {
     width: 100%;
     display: none;
-    padding: 20px 0; 
-    justify-content: top;
+    padding: 20px 0;
     position: relative;
-}
-
-#photoWallContainer:not(:empty) {
-    cursor: pointer;
 }
 
 #photoWallContainer.drag-hover {
@@ -141,6 +136,7 @@ summary {
     justify-content: center;
     min-height: 200px;
     aspect-ratio: 1;
+    box-sizing: border-box;
 }
 
 .add-more-hint::before {
@@ -152,8 +148,8 @@ summary {
 }
 
 @keyframes floatIcon {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-4px); }
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
 }
 
 .add-more-hint:hover {
@@ -163,7 +159,7 @@ summary {
 }
 
 .add-more-hint:active {
-    transform: translateY(0px);
+    transform: translateY(0);
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
 }
 
@@ -178,27 +174,6 @@ summary {
     font-size: 16px;
     font-weight: 600;
     margin-bottom: 4px;
-    opacity: 1;
-}
-
-/* 添加一个脉冲效果 */
-.add-more-hint::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    transform: translate(-50%, -50%) scale(0);
-    border-radius: 12px;
-    animation: pulse 3s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-    70% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
 }
 
 #photoWall {
@@ -206,20 +181,29 @@ summary {
     max-width: 1200px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px;
-    padding:  0 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    background-color: #ffffff; 
+    padding: 0 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    box-sizing: border-box;
 }
 
 .photo-container {
     display: flex;
     width: 100%;
     height: auto;
-    object-fit: cover;
     overflow: hidden;
     position: relative;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform, opacity;
+    border-radius: 8px;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
 }
 
 .photo {
@@ -229,92 +213,15 @@ summary {
     object-fit: cover;
 }
 
-
-
-/* iOS风格拖拽样式 */
-.ios-placeholder {
-    border: 2px dashed #007bff !important;
-    border-radius: 8px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    position: relative !important;
-    overflow: hidden !important;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    background: transparent !important;
-}
-
-@keyframes placeholderPulse {
-    0%, 100% {
-        border-color: #007bff;
-        box-shadow: 0 0 0 rgba(0, 123, 255, 0.4);
-    }
-    50% {
-        border-color: #0056b3;
-        box-shadow: 0 0 10px rgba(0, 123, 255, 0.6);
-    }
-}
-
-/* iOS拖拽模式全局样式 */
-.ios-drag-mode {
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-.ios-drag-mode * {
-    cursor: grabbing !important;
-}
-
-/* iOS拖拽中的图片容器 */
-.photo-container.ios-dragging {
-    opacity: 0.3 !important;
-    transform: scale(0.95) !important;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-}
-
-.photo-container.ios-dragging::before {
-    opacity: 0 !important;
-}
-
-/* 拖拽克隆样式 */
-.drag-clone {
-    position: fixed !important;
-    z-index: 10000 !important;
-    pointer-events: none !important;
-    transform: scale(1.1) rotate(5deg) !important;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important;
-    border-radius: 12px !important;
-    transition: none !important;
-    opacity: 0.9 !important;
-}
-
-.drag-clone .photo {
-    border-radius: 12px !important;
-}
-
-/* iOS风格图片容器样式 */
-.photo-container {
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    will-change: transform, opacity;
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-}
-
 .photo-container:hover {
     transform: translateZ(0) scale(1.02);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .photo-container:active {
     transform: translateZ(0) scale(0.98);
 }
 
-/* 长按提示样式 */
 .photo-container::before {
     content: '长按拖拽';
     position: absolute;
@@ -326,22 +233,18 @@ summary {
     padding: 3px 6px;
     border-radius: 6px;
     opacity: 0;
-    transition: all 0.3s ease;
+    transition: opacity 0.2s ease;
     z-index: 10;
     pointer-events: none;
-    backdrop-filter: blur(4px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .photo-container:hover::before {
     opacity: 1;
-    transform: translateY(-2px);
 }
 
-/* 长按进行中的视觉反馈 */
 .photo-container.long-pressing {
-    transform: scale(0.98) !important;
-    box-shadow: 0 2px 8px rgba(0,123,255,0.3) !important;
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
 .photo-container.long-pressing::before {
@@ -350,7 +253,43 @@ summary {
     opacity: 1;
 }
 
-/* 移动设备上的提示 */
+.photo-container.ios-dragging {
+    opacity: 0.3;
+    transform: scale(0.95);
+}
+
+.ios-placeholder {
+    border: 2px dashed #007bff;
+    background: rgba(0, 123, 255, 0.05);
+    animation: placeholderPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes placeholderPulse {
+    0%, 100% { border-color: #007bff; box-shadow: 0 0 0 rgba(0, 123, 255, 0.4); }
+    50%      { border-color: #0056b3; box-shadow: 0 0 10px rgba(0, 123, 255, 0.6); }
+}
+
+.drag-clone {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    transform-origin: center center;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    opacity: 0.9;
+}
+
+.drag-clone .photo {
+    border-radius: 12px;
+}
+
+.ios-drag-mode {
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+    cursor: grabbing;
+}
+
 @media (hover: none) and (pointer: coarse) {
     .photo-container::before {
         content: '长按移动';
@@ -379,8 +318,9 @@ summary {
     max-width: 600px;
     border-radius: 8px;
     background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-align: left;
+    box-sizing: border-box;
 }
 
 .centered {
