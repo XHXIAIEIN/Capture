@@ -123,17 +123,10 @@ class App {
   bindPopover() {
     const { sortExpressionHelp, sortExpressionPopover, sortExpressionPopoverClose } = this.ui;
     const hide = () => { sortExpressionPopover.hidden = true; };
-    sortExpressionHelp.addEventListener('click', (e) => {
-      e.stopPropagation();
+    sortExpressionHelp.addEventListener('click', () => {
       sortExpressionPopover.hidden = !sortExpressionPopover.hidden;
     });
     sortExpressionPopoverClose.addEventListener('click', hide);
-    sortExpressionPopover.addEventListener('click', (e) => e.stopPropagation());
-    document.addEventListener('click', (e) => {
-      if (sortExpressionPopover.hidden) return;
-      if (e.target === sortExpressionHelp) return;
-      hide();
-    });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') hide();
     });
