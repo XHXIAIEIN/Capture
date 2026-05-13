@@ -33,7 +33,6 @@ export function buildPhotoElement(desc, onDragStart) {
   img.alt = desc.name;
   img.title = desc.name;
   img.draggable = false;
-  img.addEventListener('load', () => URL.revokeObjectURL(img.src), { once: true });
 
   const container = document.createElement('div');
   container.className = 'photo-container';
@@ -79,6 +78,7 @@ export class FileImporter {
     this.onComplete = onComplete;
     this.descriptors = [];
     this.worker = null;
+    this.isImporting = false;
     this.initWorker();
   }
 
@@ -108,6 +108,12 @@ export class FileImporter {
   }
 
   clearDom() {
+    for (const img of this.photoWall.querySelectorAll('img.photo')) {
+      const url = img.src;
+      if (typeof url === 'string' && url.startsWith('blob:')) {
+        try { URL.revokeObjectURL(url); } catch {}
+      }
+    }
     [...this.photoWall.querySelectorAll('.photo-container')].forEach((el) => el.remove());
   }
 
@@ -141,6 +147,7 @@ export class FileImporter {
       return;
     }
 
+    this.isImporting = true;
     if (this.worker) {
       const existing = isAppend
         ? this.descriptors.map(({ element, ...rest }) => rest)
@@ -197,6 +204,7 @@ export class FileImporter {
       this.descriptors = finalDescs;
       await this.renderChunked(finalDescs, false);
     }
+    this.isImporting = false;
     this.onComplete?.({ added: newDescs.length, total: this.descriptors.length });
   }
 
@@ -227,10 +235,16 @@ export class FileImporter {
         this.descriptors = finalDescs;
         if (appendOnly) {
           this.renderChunked(finalDescs.slice(previousCount), true)
-            .then(() => this.onComplete?.({ added: this._pendingAddedCount, total: this.descriptors.length }));
+            .then(() => {
+              this.isImporting = false;
+              this.onComplete?.({ added: this._pendingAddedCount, total: this.descriptors.length });
+            });
         } else {
           this.renderChunked(finalDescs, false)
-            .then(() => this.onComplete?.({ added: this._pendingAddedCount, total: this.descriptors.length }));
+            .then(() => {
+              this.isImporting = false;
+              this.onComplete?.({ added: this._pendingAddedCount, total: this.descriptors.length });
+            });
         }
         break;
       }
@@ -238,11 +252,15 @@ export class FileImporter {
         const grouped = applyGrouping(msg.data, this._pendingGroupBy);
         this.descriptors = grouped;
         this.renderChunked(grouped, false)
-          .then(() => this.onComplete?.({ added: 0, total: this.descriptors.length, sortedOnly: true }));
+          .then(() => {
+            this.isImporting = false;
+            this.onComplete?.({ added: 0, total: this.descriptors.length, sortedOnly: true });
+          });
         break;
       }
       case 'error':
         console.error(`Worker error (${msg.phase}):`, msg.error);
+        this.isImporting = false;
         this.onComplete?.({ error: msg.error });
         break;
     }
@@ -251,6 +269,9 @@ export class FileImporter {
   resort(order, groupBy) {
     if (this.descriptors.length === 0) return;
     this._pendingGroupBy = groupBy;
+    // Import in flight: let the worker callback apply the latest groupBy.
+    // Touching DOM / firing onComplete here would race the import pipeline.
+    if (this.isImporting) return;
     // Sort + group in main thread, then reorder existing DOM nodes.
     // Avoids re-building photo elements and the cost of round-tripping File
     // objects through the worker just to change order.

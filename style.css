@@ -11,6 +11,13 @@ body {
     box-sizing: border-box;
 }
 
+.container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 h1 {
     font-size: 24px;
     color: #0056b3;
@@ -81,6 +88,10 @@ a:hover {
 }
 
 .configGroup label.span-full {
+    flex-basis: 100%;
+}
+
+.configGroup label.row-break {
     flex-basis: 100%;
 }
 
@@ -275,6 +286,10 @@ summary {
     padding-top: 10px;
 }
 
+#configLayout {
+    margin-bottom: 10px;
+}
+
 #configAdvanced {
     margin-top: 10px;
 }
@@ -333,12 +348,56 @@ summary {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    display: grid;
-    gap: 10px;
-    padding: 0 15px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: transparent;
     box-sizing: border-box;
+}
+
+#photoWall .grid-page {
+    display: grid;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#photoWall.layout-auto .auto-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#photoWall.layout-auto .auto-row {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#photoWall.layout-auto .auto-row .photo-container {
+    flex-shrink: 0;
+    flex-grow: 0;
+    height: 100%;
+}
+
+#photoWall.layout-auto .auto-row .photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@property --tilt {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@property --lift {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 1;
 }
 
 .photo-container {
@@ -348,9 +407,11 @@ summary {
     overflow: hidden;
     position: relative;
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateZ(0) scale(1);
+    transition: transform 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 220ms ease-out;
     will-change: transform, opacity;
     border-radius: 8px;
     user-select: none;
@@ -371,82 +432,393 @@ summary {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.photo-container:active {
-    transform: translateZ(0) scale(0.98);
-}
-
 .photo-container::before {
     content: '长按拖拽';
     position: absolute;
-    top: 4px;
-    right: 4px;
-    background: rgba(0, 0, 0, 0.8);
+    top: 6px;
+    right: 6px;
+    background: rgba(20, 20, 20, 0.72);
     color: white;
     font-size: 10px;
-    padding: 3px 6px;
-    border-radius: 6px;
+    padding: 3px 7px;
+    border-radius: 999px;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transform: translateY(-2px);
+    transition: opacity 160ms ease, transform 160ms ease;
     z-index: 10;
     pointer-events: none;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .photo-container:hover::before {
     opacity: 1;
+    transform: translateY(0);
 }
 
-.photo-container.long-pressing {
-    transform: scale(0.98);
-    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+.photo-container.is-pressed {
+    transform: translateZ(0) scale(0.97);
+    transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
-.photo-container.long-pressing::before {
-    content: '继续长按...';
-    background: rgba(0, 123, 255, 0.9);
+.photo-container.is-pressed::before { opacity: 0; }
+
+.photo-container.is-charging {
+    transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 220ms ease-out,
+                filter 220ms ease-out;
+}
+
+.photo-container.is-charging::before { opacity: 0; }
+
+.photo-container.is-charging.is-filled {
+    transform: translateZ(0) scale(1.04);
+    box-shadow:
+        0 0 0 3px rgba(0, 123, 255, 0.55),
+        0 12px 28px -6px rgba(0, 123, 255, 0.35),
+        0 4px 12px rgba(0, 0, 0, 0.18);
+    filter: saturate(1.08);
+}
+
+.photo-container.is-charging.is-relaxing {
+    transform: translateZ(0) scale(1);
+    box-shadow: none;
+    filter: none;
+}
+
+.photo-container.is-source {
+    opacity: 0.18;
+    transform: translateZ(0) scale(0.94);
+    filter: saturate(0.4) blur(0.4px);
+    box-shadow: none;
+    transition: opacity 200ms ease-out, transform 200ms ease-out, filter 200ms ease-out;
+    pointer-events: none;
+}
+
+.photo-container.is-source::before { opacity: 0; }
+
+.photo-container.is-incoming {
+    opacity: 0;
+    transform: translateZ(0) scale(1);
+    filter: none;
+    transition: none;
+    pointer-events: none;
+}
+
+.photo-container.is-settling {
+    animation: photo-settle 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes photo-settle {
+    0%   { transform: translateZ(0) scale(0.96); }
+    55%  { transform: translateZ(0) scale(1.035); }
+    100% { transform: translateZ(0) scale(1); }
+}
+
+.is-drop-indicator {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 9998;
+    pointer-events: none;
+    background: linear-gradient(180deg, #0d6efd 0%, #0046b8 100%);
+    border-radius: 999px;
+    box-shadow:
+        0 0 0 1px rgba(13, 110, 253, 0.25),
+        0 0 14px rgba(13, 110, 253, 0.55),
+        0 0 32px rgba(13, 110, 253, 0.25);
+    opacity: 1;
+    transform-origin: center center;
+    will-change: transform, opacity;
+    transition: opacity 120ms ease-out, transform 130ms cubic-bezier(0.32, 0.72, 0.4, 1);
+    animation: indicator-breathe 1.4s ease-in-out infinite;
+}
+
+.is-drop-indicator.is-hidden {
+    opacity: 0;
+}
+
+@keyframes indicator-breathe {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(13, 110, 253, 0.25),
+                            0 0 14px rgba(13, 110, 253, 0.55),
+                            0 0 32px rgba(13, 110, 253, 0.20); }
+    50%      { box-shadow: 0 0 0 1px rgba(13, 110, 253, 0.30),
+                            0 0 22px rgba(13, 110, 253, 0.80),
+                            0 0 48px rgba(13, 110, 253, 0.35); }
+}
+
+.is-clone {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 10000;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+}
+
+.is-clone.is-landing {
+    transition: transform 200ms cubic-bezier(0.32, 0.72, 0.4, 1);
+}
+
+.is-clone.is-vanishing {
+    opacity: 0;
+    transition: opacity 260ms ease-out;
+}
+
+.is-clone.is-vanishing .is-clone-inner {
+    --lift: 0.4;
+    filter: saturate(0.3) blur(1px);
+    transition: --lift 260ms cubic-bezier(0.55, 0, 0.7, 0.2), filter 260ms ease-out;
+}
+
+.is-clone.is-over-trash .is-clone-inner {
+    --lift: 0.92;
+    filter: saturate(1.1) hue-rotate(-12deg) drop-shadow(0 0 12px rgba(192, 57, 43, 0.55));
+    box-shadow:
+        0 22px 48px -8px rgba(192, 57, 43, 0.45),
+        0 0 0 1.5px rgba(192, 57, 43, 0.6),
+        0 0 24px rgba(192, 57, 43, 0.35);
+    transition: --lift 200ms cubic-bezier(0.32, 0.72, 0.4, 1),
+                filter 200ms ease-out,
+                box-shadow 200ms ease-out;
+}
+
+.drag-trash-zone {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    z-index: 9999;
+    padding: 14px 24px;
+    min-width: 220px;
+    max-width: 80vw;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border: 1.5px dashed rgba(192, 57, 43, 0.42);
+    color: #c0392b;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+    opacity: 0;
+    transform: translate(-50%, 32px);
+    pointer-events: none;
+    transition: opacity 220ms ease-out,
+                transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 200ms ease-out,
+                border-color 200ms ease-out,
+                color 200ms ease-out,
+                box-shadow 200ms ease-out;
+}
+
+body.drag-context .drag-trash-zone {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.drag-trash-zone.is-active {
+    background: linear-gradient(135deg, #ff5a5a, #c0392b);
+    border-style: solid;
+    border-color: #c0392b;
+    color: #fff;
+    transform: translate(-50%, -6px) scale(1.06);
+    box-shadow:
+        0 18px 36px rgba(192, 57, 43, 0.45),
+        0 0 0 6px rgba(192, 57, 43, 0.12);
+}
+
+.drag-trash-zone.is-pending {
+    opacity: 0;
+    transform: translate(-50%, 12px) scale(0.96);
+}
+
+.drag-trash-icon {
+    display: inline-flex;
+    align-items: center;
+}
+
+.drag-trash-icon svg {
+    display: block;
+}
+
+.drag-trash-zone.is-active .drag-trash-icon svg {
+    animation: trash-shake 380ms ease-in-out;
+}
+
+@keyframes trash-shake {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    20%      { transform: translateX(-2px) rotate(-8deg); }
+    40%      { transform: translateX(2px) rotate(8deg); }
+    60%      { transform: translateX(-1.5px) rotate(-6deg); }
+    80%      { transform: translateX(1.5px) rotate(6deg); }
+}
+
+.drag-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    background: rgba(20, 20, 24, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 180ms ease-out;
+}
+
+.drag-confirm-overlay.is-visible {
     opacity: 1;
 }
 
-.photo-container.ios-dragging {
-    opacity: 0.3;
-    transform: scale(0.95);
+.drag-confirm-card {
+    width: 320px;
+    max-width: 90vw;
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px 22px 18px;
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.32),
+        0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: scale(0.92) translateY(8px);
+    opacity: 0;
+    transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease-out;
 }
 
-.ios-placeholder {
-    border: 2px dashed #007bff;
-    background: rgba(0, 123, 255, 0.05);
-    animation: placeholderPulse 1.5s ease-in-out infinite;
+.drag-confirm-overlay.is-visible .drag-confirm-card {
+    transform: scale(1) translateY(0);
+    opacity: 1;
 }
 
-@keyframes placeholderPulse {
-    0%, 100% { border-color: #007bff; box-shadow: 0 0 0 rgba(0, 123, 255, 0.4); }
-    50%      { border-color: #0056b3; box-shadow: 0 0 10px rgba(0, 123, 255, 0.6); }
+.drag-confirm-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 6px;
 }
 
-.drag-clone {
-    position: fixed;
-    z-index: 10000;
-    pointer-events: none;
+.drag-confirm-name {
+    font-size: 12.5px;
+    color: #888;
+    margin-bottom: 18px;
+    word-break: break-all;
+    line-height: 1.45;
+}
+
+.drag-confirm-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.drag-confirm-actions button {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid #d6d6d6;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease, transform 80ms ease;
+}
+
+.drag-confirm-actions button:hover {
+    background: #f4f4f4;
+    border-color: #b9b9b9;
+}
+
+.drag-confirm-actions button:active {
+    transform: scale(0.97);
+}
+
+.drag-confirm-actions .drag-confirm-ok {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+}
+
+.drag-confirm-actions .drag-confirm-ok:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+}
+
+.drag-confirm-actions .drag-confirm-ok:focus-visible {
+    outline: 2px solid rgba(220, 53, 69, 0.4);
+    outline-offset: 2px;
+}
+
+.is-clone-inner {
+    --tilt: 0deg;
+    --lift: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow:
+        0 22px 48px -10px rgba(0, 0, 0, 0.38),
+        0 10px 22px rgba(0, 0, 0, 0.18),
+        0 0 0 1px rgba(0, 0, 0, 0.04);
+    transform: scale(var(--lift)) rotate(var(--tilt));
     transform-origin: center center;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    opacity: 0.9;
+    transition: --tilt 140ms ease-out, --lift 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: #fff;
 }
 
-.drag-clone .photo {
+.is-clone-inner::before,
+.is-clone-inner::after { display: none !important; }
+
+.is-clone-inner > .photo {
     border-radius: 12px;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.ios-drag-mode {
+.is-clone-inner.is-lifting {
+    --lift: 1.05;
+}
+
+.is-clone.is-landing .is-clone-inner {
+    --lift: 1;
+    transition: --tilt 200ms ease-out, --lift 200ms cubic-bezier(0.32, 0.72, 0.4, 1);
+}
+
+body.drag-context {
+    cursor: grabbing;
     user-select: none;
     -webkit-user-select: none;
-    overflow: hidden;
-    cursor: grabbing;
 }
+
+body.drag-context .photo-container:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+body.drag-context .photo-container::before { opacity: 0 !important; }
 
 @media (hover: none) and (pointer: coarse) {
     .photo-container::before {
         content: '长按移动';
     }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .photo-container,
+    .photo-container.is-charging,
+    .is-clone-inner,
+    .is-clone.is-landing {
+        transition-duration: 0ms !important;
+        animation: none !important;
+    }
+    .is-drop-indicator { animation: none; }
 }
 
 #captureButton {

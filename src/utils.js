@@ -3,8 +3,8 @@ export const CONSTANTS = {
   ZIP_COMPRESSION_LEVEL: 9,
   CHUNK_SIZE_RENDER: 5,
   CHUNK_SIZE_CAPTURE: 2,
-  LONG_PRESS_MS: 200,
-  DRAG_CANCEL_DISTANCE: 10,
+  LONG_PRESS_MS: 280,
+  DRAG_CANCEL_DISTANCE: 14,
   CLICK_DEBOUNCE_MS: 300,
 };
 
@@ -106,6 +106,8 @@ export const SORT_PRESET_TO_EXPRESSION = {
   aspectRatioDesc: 'aspect DESC',
   resolutionAsc: 'resolution ASC',
   resolutionDesc: 'resolution DESC',
+  orientationLandscape: 'orientation DESC',
+  orientationPortrait: 'orientation ASC',
 };
 
 export const SORT_FIELD_ALIASES = {

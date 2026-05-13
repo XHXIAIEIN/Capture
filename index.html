@@ -48,75 +48,127 @@
 			</details>
 
 			<div id="configPanel">
-				<div class="configGroup">
-					<label>
-						每列显示:
-						<input type="number" id="columns" value="4" min="1" />
-					</label>
-					<label>
-						单张截图行数:
-						<input type="number" id="rows" value="6" min="1" />
-					</label>
-					<label>
-						排序:
-						<select id="sortOrder">
-							<optgroup label="基础">
-								<option value="nameAsc">名称 (A-Z)</option>
-								<option value="nameDesc">名称 (Z-A)</option>
-								<option value="dateAsc">最后修改时间 (最早优先)</option>
-								<option value="dateDesc">最后修改时间 (最近优先)</option>
-							</optgroup>
-							<optgroup label="更多">
-								<option value="sizeAsc">大小 (更小优先)</option>
-								<option value="sizeDesc">大小 (更大优先)</option>
-								<option value="extAsc">扩展名 (A-Z)</option>
-								<option value="extDesc">扩展名 (Z-A)</option>
-							</optgroup>
-							<optgroup label="图像">
-								<option value="widthAsc">宽度 (更小优先)</option>
-								<option value="widthDesc">宽度 (更大优先)</option>
-								<option value="heightAsc">高度 (更小优先)</option>
-								<option value="heightDesc">高度 (更大优先)</option>
-							</optgroup>
-							<optgroup label="比例">
-								<option value="aspectRatioAsc">宽高比 (高度优先)</option>
-								<option value="aspectRatioDesc">宽高比 (宽度优先)</option>
-								<option value="resolutionAsc">分辨率 (更小优先)</option>
-								<option value="resolutionDesc">分辨率 (更大优先)</option>
-							</optgroup>
-						</select>
-					</label>
-					<label>
-						分组:
-						<select id="groupBy">
-							<option value="none">无分组</option>
-							<option value="orientation">方向 (横/竖/方)</option>
-							<option value="ext">扩展名</option>
-							<option value="aspect">宽高比档位</option>
-						</select>
-					</label>
-					<label>
-						下载方式:
-						<select id="downloadMode">
-							<option value="folder">保存到文件夹</option>
-							<option value="browser">浏览器下载</option>
-							<option value="zip">打包下载</option>
-						</select>
-					</label>
-					<label>
-						下载格式
-						<select id="imageFormat">
-							<option value="webp">WebP</option>
-							<option value="png">PNG</option>
-							<option value="jpg">JPG</option>
-							<option value="avif">AVIF</option>
-						</select>
-					</label>
+				<div id="configLayout">
+					<details open>
+						<summary>布局设置</summary>
+						<div class="configGroup">
+							<label>
+								排序:
+								<select id="sortOrder">
+									<optgroup label="基础">
+										<option value="nameAsc">名称 (A-Z)</option>
+										<option value="nameDesc">名称 (Z-A)</option>
+										<option value="dateAsc">最后修改时间 (最早优先)</option>
+										<option value="dateDesc">最后修改时间 (最近优先)</option>
+									</optgroup>
+									<optgroup label="更多">
+										<option value="sizeAsc">大小 (更小优先)</option>
+										<option value="sizeDesc">大小 (更大优先)</option>
+										<option value="extAsc">扩展名 (A-Z)</option>
+										<option value="extDesc">扩展名 (Z-A)</option>
+									</optgroup>
+									<optgroup label="图像">
+										<option value="widthAsc">宽度 (更小优先)</option>
+										<option value="widthDesc">宽度 (更大优先)</option>
+										<option value="heightAsc">高度 (更小优先)</option>
+										<option value="heightDesc">高度 (更大优先)</option>
+									</optgroup>
+									<optgroup label="比例">
+										<option value="aspectRatioAsc">宽高比 (高度优先)</option>
+										<option value="aspectRatioDesc">宽高比 (宽度优先)</option>
+										<option value="resolutionAsc">分辨率 (更小优先)</option>
+										<option value="resolutionDesc">分辨率 (更大优先)</option>
+									</optgroup>
+									<optgroup label="方向">
+										<option value="orientationLandscape">方向 (横 → 方 → 竖)</option>
+										<option value="orientationPortrait">方向 (竖 → 方 → 横)</option>
+									</optgroup>
+								</select>
+							</label>
+							<label>
+								分组:
+								<select id="groupBy">
+									<option value="none">无分组</option>
+									<option value="orientation">方向 (横/竖/方)</option>
+									<option value="ext">扩展名</option>
+									<option value="aspect">宽高比档位</option>
+								</select>
+							</label>
+							<label class="row-break">
+								布局模式:
+								<select id="layoutMode">
+									<option value="grid">网格 (等宽)</option>
+									<option value="auto">自动 (铺满)</option>
+								</select>
+							</label>
+							<label data-mode="grid">
+								每列显示:
+								<input type="number" id="columns" value="4" min="1" />
+							</label>
+							<label data-mode="grid" data-group="default">
+								单张截图行数:
+								<input type="number" id="rows" value="6" min="1" />
+							</label>
+							<label data-mode="grid" data-group="orientation" style="display: none">
+								横图行数:
+								<input type="number" id="rowsLandscape" value="6" min="1" />
+							</label>
+							<label data-mode="grid" data-group="orientation" style="display: none">
+								竖图行数:
+								<input type="number" id="rowsPortrait" value="6" min="1" />
+							</label>
+							<label data-mode="grid" data-group="orientation" style="display: none">
+								方图行数:
+								<input type="number" id="rowsSquare" value="6" min="1" />
+							</label>
+							<label data-mode="auto" style="display: none">
+								每行图片数:
+								<input type="number" id="maxItemsPerRow" value="4" min="1" max="20" />
+							</label>
+							<label data-mode="auto" data-group="default" style="display: none">
+								单张截图行数:
+								<input type="number" id="maxRowsPerShot" value="6" min="0" />
+							</label>
+							<label data-mode="auto" data-group="orientation" style="display: none">
+								横图行数:
+								<input type="number" id="maxRowsPerShotLandscape" value="0" min="0" />
+							</label>
+							<label data-mode="auto" data-group="orientation" style="display: none">
+								竖图行数:
+								<input type="number" id="maxRowsPerShotPortrait" value="0" min="0" />
+							</label>
+							<label data-mode="auto" data-group="orientation" style="display: none">
+								方图行数:
+								<input type="number" id="maxRowsPerShotSquare" value="0" min="0" />
+							</label>
+							<label data-mode="auto" style="display: none">
+								重排自由度:
+								<input type="number" id="reorderFreedom" value="0" min="0" max="20" />
+							</label>
+						</div>
+					</details>
 				</div>
 				<div id="configAdvanced">
 					<details>
 						<summary>高级设置</summary>
 						<div class="configGroup">
+							<label>
+								下载方式:
+								<select id="downloadMode">
+									<option value="folder">保存到文件夹</option>
+									<option value="browser">浏览器下载</option>
+									<option value="zip">打包下载</option>
+								</select>
+							</label>
+							<label>
+								下载格式:
+								<select id="imageFormat">
+									<option value="webp">WebP</option>
+									<option value="png">PNG</option>
+									<option value="jpg">JPG</option>
+									<option value="avif">AVIF</option>
+								</select>
+							</label>
 							<label>
 								图片间距:
 								<input type="number" id="columnGap" value="2" min="0" />
