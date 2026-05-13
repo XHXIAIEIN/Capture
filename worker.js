@@ -1,60 +1,101 @@
 // worker.js - Web Worker for handling heavy operations
 importScripts('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
 
+const NATURAL = { numeric: true };
+function natCmp(a, b) {
+    return String(a ?? '').localeCompare(String(b ?? ''), undefined, NATURAL);
+}
+function numCmp(a, b) {
+    return (a || 0) - (b || 0);
+}
+
 class WorkerUtils {
     static formatDate(date) {
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}-${String(date.getMinutes()).padStart(2, '0')}-${String(date.getSeconds()).padStart(2, '0')}`;
     }
 
-    static sortFiles(files, order) {
+    static deriveFilenameParts(filename) {
+        const s = String(filename ?? '');
+        const i = s.lastIndexOf('.');
+        if (i <= 0) return { ext: '', basename: s };
+        return { ext: s.slice(i + 1).toLowerCase(), basename: s.slice(0, i) };
+    }
+
+    static deriveOrientation(width, height) {
+        if (width > height) return 1;
+        if (width < height) return -1;
+        return 0;
+    }
+
+    static sortFiles(files, criteria) {
+        if (criteria && typeof criteria === 'object' && Array.isArray(criteria.steps)) {
+            if (criteria.steps.some((s) => s.field === 'random')) {
+                for (const item of files) item._rand = Math.random();
+            }
+            return files.sort((a, b) => {
+                for (const { field, desc } of criteria.steps) {
+                    let r;
+                    if (field === 'random') {
+                        r = numCmp(a._rand, b._rand);
+                    } else {
+                        const va = a[field];
+                        const vb = b[field];
+                        if (typeof va === 'string' || typeof vb === 'string') {
+                            r = natCmp(va, vb);
+                        } else {
+                            r = numCmp(va, vb);
+                        }
+                    }
+                    if (r !== 0) return desc ? -r : r;
+                }
+                return 0;
+            });
+        }
         return files.sort((a, b) => {
-            switch (order) {
-                case 'nameAsc': return a.name.localeCompare(b.name);
-                case 'nameDesc': return b.name.localeCompare(a.name);
-                case 'dateAsc': return a.lastModified - b.lastModified;
-                case 'dateDesc': return b.lastModified - a.lastModified;
-                case 'sizeAsc': return a.size - b.size;
-                case 'sizeDesc': return b.size - a.size;
-                case 'typeAsc': return a.type.localeCompare(b.type);
-                case 'typeDesc': return b.type.localeCompare(a.type);
-                case 'widthAsc': return (a.width || 0) - (b.width || 0);
-                case 'widthDesc': return (b.width || 0) - (a.width || 0);
-                case 'heightAsc': return (a.height || 0) - (b.height || 0);
-                case 'heightDesc': return (b.height || 0) - (a.height || 0);
-                case 'aspectRatioAsc': return (a.aspectRatio || 0) - (b.aspectRatio || 0);
-                case 'aspectRatioDesc': return (b.aspectRatio || 0) - (a.aspectRatio || 0);
-                case 'resolutionAsc': return (a.resolution || 0) - (b.resolution || 0);
-                case 'resolutionDesc': return (b.resolution || 0) - (a.resolution || 0);
+            switch (criteria) {
+                case 'nameAsc': return natCmp(a.basename ?? a.name, b.basename ?? b.name);
+                case 'nameDesc': return natCmp(b.basename ?? b.name, a.basename ?? a.name);
+                case 'dateAsc': return numCmp(a.lastModified, b.lastModified);
+                case 'dateDesc': return numCmp(b.lastModified, a.lastModified);
+                case 'sizeAsc': return numCmp(a.size, b.size);
+                case 'sizeDesc': return numCmp(b.size, a.size);
+                case 'extAsc': return natCmp(a.ext, b.ext);
+                case 'extDesc': return natCmp(b.ext, a.ext);
+                case 'widthAsc': return numCmp(a.width, b.width);
+                case 'widthDesc': return numCmp(b.width, a.width);
+                case 'heightAsc': return numCmp(a.height, b.height);
+                case 'heightDesc': return numCmp(b.height, a.height);
+                case 'aspectRatioAsc': return numCmp(a.aspectRatio, b.aspectRatio);
+                case 'aspectRatioDesc': return numCmp(b.aspectRatio, a.aspectRatio);
+                case 'resolutionAsc': return numCmp(a.resolution, b.resolution);
+                case 'resolutionDesc': return numCmp(b.resolution, a.resolution);
                 default: return 0;
             }
         });
     }
 
     static async getImageDimensions(file) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                const width = img.naturalWidth;
-                const height = img.naturalHeight;
-                const aspectRatio = parseFloat((width / height).toFixed(2));
-                const resolution = width * height;
-                
-                resolve({
-                    width,
-                    height,
-                    aspectRatio,
-                    resolution
-                });
-                
-                // Clean up
-                URL.revokeObjectURL(img.src);
+        // Workers don't have `Image`, but they do have `createImageBitmap`.
+        // Apply EXIF orientation so width/height match the displayed dimensions
+        // (iOS/Android photos are stored with raw landscape pixels + a rotate tag).
+        let bitmap;
+        try {
+            bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        } catch {
+            bitmap = await createImageBitmap(file);
+        }
+        try {
+            const width = bitmap.width;
+            const height = bitmap.height;
+            return {
+                width,
+                height,
+                aspectRatio: parseFloat((width / height).toFixed(2)),
+                resolution: width * height,
             };
-            img.onerror = () => {
-                URL.revokeObjectURL(img.src);
-                reject(new Error('Failed to load image'));
-            };
-            img.src = URL.createObjectURL(file);
-        });
+        } finally {
+            bitmap.close?.();
+        }
     }
 }
 
@@ -66,11 +107,15 @@ class WorkerImageProcessor {
             const file = files[i];
             
             if (file.type.startsWith('image/')) {
+                const { ext, basename } = WorkerUtils.deriveFilenameParts(file.name);
                 try {
                     const dimensions = await WorkerUtils.getImageDimensions(file);
-                    
-                    const processedFile = {
+                    const orientation = WorkerUtils.deriveOrientation(dimensions.width, dimensions.height);
+
+                    processedFiles.push({
                         name: file.name,
+                        basename,
+                        ext,
                         size: file.size,
                         type: file.type,
                         lastModified: file.lastModified,
@@ -78,15 +123,15 @@ class WorkerImageProcessor {
                         height: dimensions.height,
                         aspectRatio: dimensions.aspectRatio,
                         resolution: dimensions.resolution,
-                        file: file // Keep reference to original file
-                    };
-                    
-                    processedFiles.push(processedFile);
+                        orientation,
+                        file: file
+                    });
                 } catch (error) {
                     console.error('Error processing file:', file.name, error);
-                    // Still add file without dimensions
                     processedFiles.push({
                         name: file.name,
+                        basename,
+                        ext,
                         size: file.size,
                         type: file.type,
                         lastModified: file.lastModified,
@@ -94,6 +139,7 @@ class WorkerImageProcessor {
                         height: 0,
                         aspectRatio: 0,
                         resolution: 0,
+                        orientation: 0,
                         file: file
                     });
                 }
@@ -136,9 +182,9 @@ class WorkerImageProcessor {
         
         // Add images to zip
         for (let i = 0; i < imageDataArray.length; i++) {
-            const { data, index } = imageDataArray[i];
-            const fileName = `${(index + 1).toString().padStart(3, '0')}.${format}`;
-            zip.file(fileName, data, { base64: true });
+            const { data, fileName, index } = imageDataArray[i];
+            const name = fileName ?? `${(index + 1).toString().padStart(3, '0')}.${format}`;
+            zip.file(name, data, { base64: true });
             
             // Send progress update
             self.postMessage({
@@ -174,46 +220,24 @@ class WorkerImageProcessor {
 // Message handler
 self.onmessage = async function(e) {
     const { type, data } = e.data;
-    
+
     try {
-        switch (type) {
-            case 'processFiles':
-                const { files, sortOrder, isAppend, appendMode, existingFiles } = data;
-                const processedFiles = await WorkerImageProcessor.processFileMetadata(files, sortOrder, isAppend, appendMode, existingFiles);
-                self.postMessage({
-                    type: 'filesProcessed',
-                    data: processedFiles,
-                    isAppend: isAppend
-                });
-                break;
-                
-            case 'createZip':
-                const { imageDataArray, format } = data;
-                const zipResult = await WorkerImageProcessor.createZipFile(imageDataArray, format);
-                self.postMessage({
-                    type: 'zipCreated',
-                    data: zipResult
-                });
-                break;
-                
-            case 'sortFiles':
-                const { filesToSort, order } = data;
-                const sortedFiles = WorkerUtils.sortFiles(filesToSort, order);
-                self.postMessage({
-                    type: 'filesSorted',
-                    data: sortedFiles
-                });
-                break;
-                
-            case 'test':
-                self.postMessage({
-                    type: 'test',
-                    data: { message: 'Worker 响应正常' }
-                });
-                break;
-                
-            default:
-                console.warn('Unknown message type:', type);
+        if (type === 'processFiles') {
+            const { files, sortOrder, isAppend, appendMode, existingFiles } = data;
+            const processedFiles = await WorkerImageProcessor.processFileMetadata(files, sortOrder, isAppend, appendMode, existingFiles);
+            self.postMessage({ type: 'filesProcessed', data: processedFiles, isAppend });
+        } else if (type === 'createZip') {
+            const { imageDataArray, format } = data;
+            const zipResult = await WorkerImageProcessor.createZipFile(imageDataArray, format);
+            self.postMessage({ type: 'zipCreated', data: zipResult });
+        } else if (type === 'sortFiles') {
+            const { filesToSort, order } = data;
+            const sortedFiles = WorkerUtils.sortFiles(filesToSort, order);
+            self.postMessage({ type: 'filesSorted', data: sortedFiles });
+        } else if (type === 'test') {
+            self.postMessage({ type: 'test', data: { message: 'Worker 响应正常' } });
+        } else {
+            console.warn('Unknown message type:', type);
         }
     } catch (error) {
         self.postMessage({
@@ -222,4 +246,4 @@ self.onmessage = async function(e) {
             phase: type
         });
     }
-}; 
+};
